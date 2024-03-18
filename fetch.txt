@@ -1,0 +1,60 @@
+import { renderHook } from '@testing-library/react-hooks';
+import useFetch from './useFetch'; // Assuming your hook file is named useFetch.js
+
+describe('useFetch', () => {
+  // Mocking the global fetch function
+  global.fetch = jest.fn(() =>
+    Promise.resolve({
+      status: 200,
+      json: () => Promise.resolve({ mockData: 'mockValue' }), // Mock response data
+    })
+  );
+
+  it('fetches data and sets it in state', async () => {
+    const { result, waitForNextUpdate } = renderHook(() =>
+      useFetch('https://example.com/api/data', {})
+    );
+
+    // Initially, data should be empty
+    expect(result.current).toEqual({});
+
+    // Wait for the hook to update state
+    await waitForNextUpdate();
+
+    // After the update, data should contain the fetched data
+    expect(result.current).toEqual({ mockData: 'mockValue' });
+  });
+
+  // Test for handling response errors
+  it('handles response errors', async () => {
+    global.fetch.mockImplementationOnce(() =>
+      Promise.resolve({
+        status: 404,
+        statusText: 'Not Found',
+      })
+    );
+
+    const { result, waitForNextUpdate } = renderHook(() =>
+      useFetch('https://example.com/api/data', {})
+    );
+
+    await waitForNextUpdate();
+
+    // Data should remain unchanged if there's an error
+    expect(result.current).toEqual({});
+  });
+
+  // Test for handling network errors
+  it('handles network errors', async () => {
+    global.fetch.mockImplementationOnce(() => Promise.reject('Network error'));
+
+    const { result, waitForNextUpdate } = renderHook(() =>
+      useFetch('https://example.com/api/data', {})
+    );
+
+    await waitForNextUpdate();
+
+    // Data should remain unchanged if there's a network error
+    expect(result.current).toEqual({});
+  });
+});
