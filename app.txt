@@ -1,0 +1,33 @@
+// Import necessary dependencies and the component to test
+import React from 'react';
+import { render } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect'; // For expect(...).toBeInTheDocument()
+import App from './App';
+
+// Mocking dependencies
+jest.mock('./hooks/UseAdfs', () => jest.fn());
+jest.mock('./hooks/UseFetch', () => jest.fn());
+
+// Mocked data for dependencies
+const mockAdfsUser = { id: 1, name: 'Mock User' };
+
+describe('App component', () => {
+  // Reset the mocks before each test
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('renders home page with user data', () => {
+    // Mock the return value of useAdfs and useFetch
+    const useAdfsMock = jest.requireMock('./hooks/UseAdfs').default;
+    const useFetchMock = jest.requireMock('./hooks/UseFetch').default;
+    useAdfsMock.mockReturnValue(undefined); // Assuming adfsUser is undefined initially
+    useFetchMock.mockReturnValue(mockAdfsUser);
+
+    // Render the App component
+    const { getByText } = render(<App />);
+
+    // Assert that the Home component is rendered
+    expect(getByText('Welcome, Mock User')).toBeInTheDocument();
+  });
+});
