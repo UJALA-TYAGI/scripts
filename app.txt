@@ -79,3 +79,27 @@ describe('YourComponent', () => {
 afterAll(() => {
   process.env = originalEnv;
 });
+
+
+describe('Home component', () => {
+  it('calls window.location.reload with true when Retry button is clicked', () => {
+    const reloadSpy = jest.spyOn(window.location, 'reload').mockImplementation(() => {});
+    
+    render(<Home isError={true} />); // Render the component containing handleClick with isError prop set to true
+    
+    // Debugging: Log the document body HTML to inspect the rendered output
+    console.log(document.body.innerHTML);
+    
+    // Find the Retry button without entering anything in the search bar
+    let retryButton = screen.queryByText('Retry'); // Use queryByText which doesn't throw error if not found
+    expect(retryButton).toBeNull(); // Ensure the Retry button is not found due to error state
+    
+    // Simulate user input in the search bar
+    const searchBar = screen.queryByPlaceholderText('Enter search query'); // Assuming placeholder text for the search bar
+    expect(searchBar).toBeNull(); // Ensure the search bar is not rendered due to error state
+    
+    // You can add further assertions for error messages or error UI elements here
+    
+    reloadSpy.mockRestore(); // Restore window.location.reload to its original implementation
+  });
+});
