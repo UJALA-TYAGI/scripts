@@ -31,3 +31,51 @@ describe('App component', () => {
     expect(getByText('Welcome, Mock User')).toBeInTheDocument();
   });
 });
+
+
+
+// Import necessary modules and dependencies
+import { render, fireEvent } from '@testing-library/react';
+import YourComponent from './YourComponent'; // Assuming your component file is named 'YourComponent.js'
+
+// Mock process.env.KEY_USED_TO_HIT_SEARCH
+const originalEnv = process.env;
+process.env.KEY_USED_TO_HIT_SEARCH = 'your_key_value'; // Replace 'your_key_value' with the actual key value used to hit search
+
+// Mock props and data
+const props = {
+  data: {
+    searchItems: ['item1', 'item2', 'item3'], // Example search items
+    setSearchValue: jest.fn() // Mock setSearchValue function
+  }
+};
+
+describe('YourComponent', () => {
+  it('should call setSearchValue with uppercased search value when key is pressed and search item matches', () => {
+    const { getByLabelText } = render(<YourComponent {...props} />);
+    const inputElement = getByLabelText('auto-complete-string-label');
+
+    fireEvent.keyDown(inputElement, { key: process.env.KEY_USED_TO_HIT_SEARCH });
+
+    expect(props.data.setSearchValue).toHaveBeenCalledTimes(1);
+    expect(props.data.setSearchValue).toHaveBeenCalledWith('YOUR_SEARCH_VALUE'); // Replace 'YOUR_SEARCH_VALUE' with expected uppercased search value
+  });
+
+  it('should call setSearchValue with matched service value when service key is pressed', () => {
+    const { getByLabelText } = render(<YourComponent {...props} />);
+    const inputElement = getByLabelText('auto-complete-string-label');
+
+    fireEvent.change(inputElement, { target: { value: 'service_value' } });
+    fireEvent.keyDown(inputElement, { key: process.env.KEY_USED_TO_HIT_SEARCH });
+
+    expect(props.data.setSearchValue).toHaveBeenCalledTimes(1);
+    expect(props.data.setSearchValue).toHaveBeenCalledWith('SERVICE_VALUE'); // Replace 'SERVICE_VALUE' with expected service value
+  });
+
+  // Add more test cases for other scenarios as needed
+});
+
+// Restore original process.env
+afterAll(() => {
+  process.env = originalEnv;
+});
