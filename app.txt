@@ -103,3 +103,32 @@ describe('Home component', () => {
     reloadSpy.mockRestore(); // Restore window.location.reload to its original implementation
   });
 });
+
+
+import React from 'react';
+import { render, fireEvent, screen } from '@testing-library/react';
+import Home from './Home'; // Assuming Home.js is in the same directory
+
+describe('Home component', () => {
+  // Mocking window.location.reload
+  Object.defineProperty(window.location, 'reload', {
+    configurable: true,
+  });
+  window.location.reload = jest.fn();
+
+  it('calls window.location.reload with true when Retry button is clicked', () => {
+    render(<Home user={{ /* your user data */ }} />);
+
+    // Simulate user input in the search bar
+    const searchBar = screen.getByPlaceholderText('Enter search query'); // Assuming placeholder text for the search bar
+    fireEvent.change(searchBar, { target: { value: 'Test Query' } }); // Enter a test query
+    
+    // Find and click the Retry button
+    const retryButton = screen.getByText('Retry');
+    fireEvent.click(retryButton);
+    
+    // Assert that reload function is called with true
+    expect(window.location.reload).toHaveBeenCalledWith(true);
+  });
+});
+
