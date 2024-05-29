@@ -144,3 +144,10 @@ Ujala is the SEP Lead for 2024 and a core committee member of the Bengaluru Tech
 
 Apart from her career assignment, Ujala enjoys dancing, reading books and learning new languages and cultures and travels which show her as a lively and curious personality. Ujala’s combination of technical skills, management capabilities and diverse interests will be beneficial to her team and the larger society.
 
+AI/ML is a game-changer for observability and platform operational readiness. The manner in which we respond to issues will be transformed by determining anomalies from the telemetry data in real time, through AI/ML models and root cause analysis. Through this approach, downtime is minimized while increasing systems’ reliability. This helps with cost-cutting on maintenance expenses as Artificial Intelligence aided predictive maintenance can detect failures before they occur and subsequently optimize maintenance schedules.
+
+Artificial intelligence driven predictive maintenance allow companies to anticipate their machinery’s breakdowns beforehand and therefore reigns in expenditure. Besides, it ensures that resources are used as most efficiently as possible for best performance at the lowest cost possible.
+
+According to case studies, AI/ML increases operational efficiency by 40% while providing unmatched reliability and effectiveness. Incident response times can be reduced up to 70% with AI/ML systems.
+
+By embracing these technologies, we can improve system resilience, operational efficiency, and cost effectiveness, making sure that our platform can cope with emerging challenges in future. Experience unmatched reliability and efficaciousness and thereby protect platforms from future disruptions. Let us discuss how we can tailor and deploy these solutions so that they meet our unique needs.
