@@ -132,3 +132,9 @@ describe('Home component', () => {
   });
 });
 
+True empowerment for specially-abled individuals lies in acknowledging their rights and building a world where accessibility and inclusion are the norm. However, There are overwhelming barriers on the way towards inclusivity,  and the most conspicuous impediment is the insufficient technology.
+
+The World Health Organization reveals that ninety percent of people who require assistive technology do not have access to it, creating a distressing reality of lost education and employment opportunities for differently-abled individuals.. 
+
+This paper will emphasize upon the pressing societal concerns that Individuals with diverse abilities encounter daily and wholeheartedly proponent for how technological innovations can reform our society into a truly accepting and fostering atmosphere for all.
+
