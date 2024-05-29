@@ -138,3 +138,9 @@ The World Health Organization reveals that ninety percent of people who require 
 
 This paper will emphasize upon the pressing societal concerns that Individuals with diverse abilities encounter daily and wholeheartedly proponent for how technological innovations can reform our society into a truly accepting and fostering atmosphere for all.
 
+Ujala Tyagi is a dedicated Software Engineer with a Bachelor's degree in Computer Science Engineering from Banasthali University, Rajasthan, India, and one year of professional experience. Currently working as a Site Reliability Engineer (SRE), Ujala also contributes to key projects like AHEAD and Backstage. AHEAD enhances visibility of AWS health notifications by aggregating and enriching these events, while Backstage provides detailed event logs of actions taken by AWS personnel on infrastructure comprising user data.
+
+Ujala is the SEP Lead for 2024 and a core committee member of the Bengaluru Tech Center Social and Cultural Committee, where she has successfully organized numerous events. Her versatile role demonstrates her technical competence and leadership capabilities.
+
+Apart from her career assignment, Ujala enjoys dancing, reading books and learning new languages and cultures and travels which show her as a lively and curious personality. Ujala’s combination of technical skills, management capabilities and diverse interests will be beneficial to her team and the larger society.
+
