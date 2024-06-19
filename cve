@@ -1,0 +1,65 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"os/exec"
+	"strings"
+)
+
+func GetImagePaths() []string {
+	imagePaths := make([]string, 0)
+
+	// Function to extract images from a given helm template file
+	extractImages := func(templatePath string, valuesPath string) []string {
+		var images []string
+		helmCmd := exec.Command("helm", "template", "-f", valuesPath, templatePath)
+		pipe, err := helmCmd.StdoutPipe()
+		if err != nil {
+			fmt.Println("Error creating stdout pipe:", err)
+			return images
+		}
+		defer pipe.Close()
+
+		grepCmd := exec.Command("grep", "containerregistry")
+		grepCmd.Stdin = pipe
+
+		if err := helmCmd.Start(); err != nil {
+			fmt.Println("Error starting helm command:", err)
+			return images
+		}
+
+		out, err := grepCmd.Output()
+		if err != nil {
+			fmt.Println("Error running grep command:", err)
+			return images
+		}
+
+		imageLines := strings.Split(string(out), "\n")
+		for _, imageLine := range imageLines {
+			splitted := strings.Split(imageLine, ":")
+			if len(splitted) == 2 && strings.TrimSpace(splitted[0]) == "image" {
+				image := strings.Replace(splitted[1], "container-external", "container-release", 1)
+				images = append(images, image)
+			}
+		}
+		return images
+	}
+
+	// Extract images from the first file
+	images := extractImages("manifests/kyverno", "manifest/kyverno-values.yml")
+	imagePaths = append(imagePaths, images...)
+
+	// Extract images from the second file
+	images = extractImages("manifests/overlays/alpha-ida-dev", "kustomization.yml")
+	imagePaths = append(imagePaths, images...)
+
+	return imagePaths
+}
+
+func main() {
+	imagePaths := GetImagePaths()
+	for _, path := range imagePaths {
+		fmt.Println(path)
+	}
+}
