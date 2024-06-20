@@ -63,3 +63,59 @@ func main() {
 		fmt.Println(path)
 	}
 }
+
+
+
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"os/exec"
+	"strings"
+	"gopkg.in/yaml.v2"
+)
+
+func GetImagePaths() []string {
+	imagePaths := make([]string, 0)
+
+	// Read the contents of the YAML file
+	yamlFile, err := ioutil.ReadFile("manifests/overlays/alpha-ida-dev/values.yaml")
+	if err != nil {
+		fmt.Printf("Error reading YAML file: %v\n", err)
+		return imagePaths
+	}
+
+	// Define a structure to match the relevant parts of the YAML file
+	type Image struct {
+		Name    string `yaml:"name"`
+		NewName string `yaml:"newName"`
+	}
+
+	type Kustomization struct {
+		Images []Image `yaml:"images"`
+	}
+
+	var kustomization Kustomization
+
+	// Unmarshal the YAML content into the structure
+	err = yaml.Unmarshal(yamlFile, &kustomization)
+	if err != nil {
+		fmt.Printf("Error unmarshalling YAML file: %v\n", err)
+		return imagePaths
+	}
+
+	// Extract image paths
+	for _, image := range kustomization.Images {
+		imagePaths = append(imagePaths, image.NewName)
+	}
+
+	return imagePaths
+}
+
+func main() {
+	paths := GetImagePaths()
+	for _, path := range paths {
+		fmt.Println(path)
+	}
+}
