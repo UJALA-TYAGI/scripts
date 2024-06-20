@@ -260,3 +260,31 @@ originalString := "containerregistry-na.jpmchase.net/container-sandbox/atlas-con
 	resultString := parts[0] + "container-sandbox/" + insertString + parts[1]
 
 	fmt.Println(resultString)
+
+
+
+package main
+
+import (
+	"fmt"
+	"strings"
+)
+
+func main() {
+	originalString := "containerregistry-na.jpmchase.net/container-sandbox/atlas-controller-authnz/"
+	insertString := "atlaswpfactories/"
+	delimiter := "container-sandbox/"
+
+	// Find the position of the delimiter
+	index := strings.Index(originalString, delimiter)
+	if index == -1 {
+		fmt.Println("Unexpected format of the original string")
+		return
+	}
+
+	// Insert the new string at the correct position
+	resultString := originalString[:index+len(delimiter)] + insertString + originalString[index+len(delimiter):]
+
+	fmt.Println(resultString)
+}
+
