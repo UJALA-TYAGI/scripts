@@ -119,3 +119,127 @@ func main() {
 		fmt.Println(path)
 	}
 }
+
+
+
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"reflect"
+	"strings"
+
+	"gopkg.in/yaml.v2"
+)
+
+// Constants for file paths
+const (
+	idaDevFilePath  = "../deploy/manifests/overlays/alpha-ida-dev/values.yaml"
+	kyvernoFilePath = "../deploy/manifests/kyverno/kyverno-values.yaml"
+)
+
+// ImageConfig represents the structure for image configuration in the YAML files
+type ImageConfig struct {
+	Registry   string `yaml:"registry"`
+	Repository string `yaml:"repository"`
+	Tag        string `yaml:"tag"`
+}
+
+// Kustomization represents the structure of the kustomization file
+type Kustomization struct {
+	Images []struct {
+		Name    string `yaml:"name"`
+		NewName string `yaml:"newName"`
+	} `yaml:"images"`
+}
+
+// readYAML reads and unmarshals a YAML file into the provided interface
+func readYAML(filePath string, out interface{}) error {
+	yamlFile, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error reading YAML file %s: %w", filePath, err)
+	}
+	if err := yaml.Unmarshal(yamlFile, out); err != nil {
+		return fmt.Errorf("error unmarshalling YAML file %s: %w", filePath, err)
+	}
+	return nil
+}
+
+// formatImagePath formats the image path and replaces container-external with container-sandbox
+func formatImagePath(config ImageConfig) string {
+	path := fmt.Sprintf("%s/%s", config.Registry, config.Repository)
+	if config.Tag != "" {
+		path = fmt.Sprintf("%s:%s", path, config.Tag)
+	}
+	return strings.Replace(path, "container-external", "container-sandbox", 1)
+}
+
+// extractImagePathsFromStruct extracts image paths from a struct using reflection
+func extractImagePathsFromStruct(v reflect.Value, imagePaths *[]string) {
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := v.Type().Field(i)
+		fieldKind := field.Kind()
+
+		if fieldKind == reflect.Struct {
+			extractImagePathsFromStruct(field, imagePaths)
+		} else if fieldKind == reflect.Slice || fieldKind == reflect.Array {
+			for j := 0; j < field.Len(); j++ {
+				extractImagePathsFromStruct(field.Index(j), imagePaths)
+			}
+		} else if fieldKind == reflect.Map {
+			for _, key := range field.MapKeys() {
+				extractImagePathsFromStruct(field.MapIndex(key), imagePaths)
+			}
+		} else if fieldKind == reflect.Ptr {
+			extractImagePathsFromStruct(field.Elem(), imagePaths)
+		} else if fieldKind == reflect.Interface && !field.IsNil() {
+			if imageConfig, ok := field.Interface().(ImageConfig); ok {
+				*imagePaths = append(*imagePaths, formatImagePath(imageConfig))
+			} else {
+				extractImagePathsFromStruct(field.Elem(), imagePaths)
+			}
+		} else if fieldType.Type == reflect.TypeOf(ImageConfig{}) {
+			imageConfig := field.Interface().(ImageConfig)
+			*imagePaths = append(*imagePaths, formatImagePath(imageConfig))
+		}
+	}
+}
+
+// GetImagePaths reads the image paths from the specified YAML files and returns them as a list
+func GetImagePaths() []string {
+	imagePaths := make([]string, 0)
+
+	// Read and unmarshal the ida-dev YAML file
+	var kustomization Kustomization
+	if err := readYAML(idaDevFilePath, &kustomization); err != nil {
+		log.Fatalf("Failed to read ida-dev YAML file: %v", err)
+	}
+
+	// Extract image paths from the ida-dev YAML file
+	for _, image := range kustomization.Images {
+		newImage := strings.Replace(image.NewName, "container-external", "container-sandbox", 1)
+		imagePaths = append(imagePaths, newImage)
+	}
+
+	// Read and unmarshal the kyverno YAML file
+	var kyvernoConfig map[string]interface{}
+	if err := readYAML(kyvernoFilePath, &kyvernoConfig); err != nil {
+		log.Fatalf("Failed to read kyverno YAML file: %v", err)
+	}
+
+	// Convert kyvernoConfig to a reflect.Value
+	kyvernoValue := reflect.ValueOf(kyvernoConfig)
+	extractImagePathsFromStruct(kyvernoValue, &imagePaths)
+
+	return imagePaths
+}
+
+func main() {
+	paths := GetImagePaths()
+	for _, path := range paths {
+		fmt.Println(path)
+	}
+}
