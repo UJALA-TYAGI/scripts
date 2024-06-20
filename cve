@@ -243,3 +243,20 @@ func main() {
 		fmt.Println(path)
 	}
 }
+
+
+
+originalString := "containerregistry-na.jpmchase.net/container-sandbox/atlas-controller-authnz/"
+	insertString := "atlaswpfactories/"
+	
+	// Split the original string at "container-sandbox/"
+	parts := strings.Split(originalString, "container-sandbox/")
+	if len(parts) != 2 {
+		fmt.Println("Unexpected format of the original string")
+		return
+	}
+
+	// Reconstruct the string with the new part inserted
+	resultString := parts[0] + "container-sandbox/" + insertString + parts[1]
+
+	fmt.Println(resultString)
