@@ -1,0 +1,252 @@
+To achieve email alerts when the log level in your Envoy configuration is changed, you can use a combination of Kubernetes ConfigMap monitoring, a script to detect changes, and an email notification service. Here’s a step-by-step guide to implement this solution:
+
+1. **Monitor the ConfigMap for Changes**:
+   - Use a Kubernetes tool like `kube-watch` or `kubewatch` to monitor changes in the ConfigMap. `kubewatch` is a popular choice and can be easily configured to trigger a script when the ConfigMap changes.
+
+2. **Script to Detect Log Level Changes**:
+   - Write a script in Golang that checks if the log level has been changed in the Envoy configuration.
+
+3. **Email Notification**:
+   - Use a service like AWS SES, SendGrid, or even an SMTP server to send email notifications.
+
+### Step 1: Install and Configure `kubewatch`
+
+First, install `kubewatch` and configure it to monitor the specific ConfigMap:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/bitnami-labs/kubewatch/master/manifests/kubewatch-deployment.yaml
+```
+
+Configure `kubewatch` to monitor the specific ConfigMap:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubewatch-config
+  namespace: default
+data:
+  config.yml: |
+    namespace: "default"
+    handler:
+      webhook:
+        url: "http://your-webhook-url.com"
+    resource:
+      deployment: false
+      replicationcontroller: false
+      services: false
+      pod: false
+      job: false
+      daemonset: false
+      configmap: true
+```
+
+### Step 2: Create a Webhook Receiver
+
+Set up a simple web server in Golang to receive the webhook from `kubewatch` and check for changes in the log level.
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "os/exec"
+    "strings"
+)
+
+type KubewatchEvent struct {
+    Type   string `json:"type"`
+    Object struct {
+        Kind string `json:"kind"`
+        Metadata struct {
+            Name      string `json:"name"`
+            Namespace string `json:"namespace"`
+        } `json:"metadata"`
+    } `json:"object"`
+}
+
+const (
+    configMapName      = "envoy-config"
+    namespace          = "default"
+    previousConfigPath = "/tmp/previous_envoy_config.yaml"
+)
+
+func getConfigMap() (string, error) {
+    cmd := exec.Command("kubectl", "get", "configmap", configMapName, "-n", namespace, "-o", "yaml")
+    output, err := cmd.Output()
+    if err != nil {
+        return "", err
+    }
+    return string(output), nil
+}
+
+func savePreviousConfig(config string) error {
+    return ioutil.WriteFile(previousConfigPath, []byte(config), 0644)
+}
+
+func getPreviousConfig() (string, error) {
+    data, err := ioutil.ReadFile(previousConfigPath)
+    if err != nil {
+        return "", err
+    }
+    return string(data), nil
+}
+
+func hasLogLevelChanged(newConfig, oldConfig string) bool {
+    return !strings.Contains(newConfig, "log_level: info") && strings.Contains(oldConfig, "log_level: info")
+}
+
+func sendEmailAlert() {
+    // Implement email sending logic here, using an email service like AWS SES, SendGrid, or SMTP
+}
+
+func webhookHandler(w http.ResponseWriter, r *http.Request) {
+    var event KubewatchEvent
+    err := json.NewDecoder(r.Body).Decode(&event)
+    if err != nil {
+        log.Printf("Error decoding kubewatch event: %v", err)
+        return
+    }
+
+    if event.Object.Kind == "ConfigMap" && event.Object.Metadata.Name == configMapName {
+        newConfig, err := getConfigMap()
+        if err != nil {
+            log.Printf("Error getting configmap: %v", err)
+            return
+        }
+
+        oldConfig, err := getPreviousConfig()
+        if err != nil {
+            log.Printf("Error getting previous config: %v", err)
+        }
+
+        if hasLogLevelChanged(newConfig, oldConfig) {
+            log.Println("Log level changed, sending email alert")
+            sendEmailAlert()
+        }
+
+        err = savePreviousConfig(newConfig)
+        if err != nil {
+            log.Printf("Error saving previous config: %v", err)
+        }
+    }
+}
+
+func main() {
+    http.HandleFunc("/", webhookHandler)
+    log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+### Step 3: Deploy the Webhook Receiver
+
+Build and deploy the webhook receiver:
+
+```bash
+go build -o webhook-receiver
+```
+
+Create a deployment and service for the webhook receiver in Kubernetes:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook-receiver
+  template:
+    metadata:
+      labels:
+        app: webhook-receiver
+    spec:
+      containers:
+        - name: webhook-receiver
+          image: your-docker-image/webhook-receiver
+          ports:
+            - containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-receiver
+spec:
+  selector:
+    app: webhook-receiver
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+```
+
+### Step 4: Update `kubewatch` Webhook URL
+
+Update the `kubewatch` ConfigMap to use the webhook receiver's service URL:
+
+```yaml
+handler:
+  webhook:
+    url: "http://webhook-receiver.default.svc.cluster.local"
+```
+
+### Step 5: Implement Email Notification
+
+Implement the `sendEmailAlert` function to send an email using your preferred email service. For example, using AWS SES:
+
+```go
+import (
+    "github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/session"
+    "github.com/aws/aws-sdk-go/service/ses"
+)
+
+func sendEmailAlert() {
+    sess, err := session.NewSession(&aws.Config{
+        Region: aws.String("us-west-2")},
+    )
+    if err != nil {
+        log.Println("Error creating session:", err)
+        return
+    }
+
+    svc := ses.New(sess)
+    input := &ses.SendEmailInput{
+        Destination: &ses.Destination{
+            ToAddresses: []*string{
+                aws.String("recipient@example.com"),
+            },
+        },
+        Message: &ses.Message{
+            Body: &ses.Body{
+                Text: &ses.Content{
+                    Charset: aws.String("UTF-8"),
+                    Data:    aws.String("The log level in the Envoy config has been changed."),
+                },
+            },
+            Subject: &ses.Content{
+                Charset: aws.String("UTF-8"),
+                Data:    aws.String("Envoy Log Level Change Alert"),
+            },
+        },
+        Source: aws.String("sender@example.com"),
+    }
+
+    _, err = svc.SendEmail(input)
+    if err != nil {
+        log.Println("Error sending email:", err)
+    }
+}
+```
+
+### Conclusion
+
+With this setup, you'll be able to monitor changes to your Envoy ConfigMap, detect changes in the log level, and send an email alert when the log level is changed. This ensures that you are immediately notified of any critical configuration changes in your Kubernetes application.
