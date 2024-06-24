@@ -1,0 +1,103 @@
+If you want to receive alerts only when the files (`envoy.yaml` and `deployment.yaml`) are changed manually through the interface (such as logging into the cluster and editing the files), you can achieve this by leveraging filesystem events rather than Git commits. Here’s how you can set it up using a combination of `inotifywait` (a tool for monitoring file system events) and a script that triggers alerts via Alertmanager:
+
+### Step 1: Set Up Filesystem Monitoring Script
+
+1. **Install `inotify-tools`** if it's not already installed on your system. This package provides `inotifywait`, which we'll use to monitor file changes:
+
+    ```bash
+    sudo apt-get install inotify-tools   # for Debian/Ubuntu
+    ```
+
+2. **Create a monitoring script** named `monitor_files.sh`:
+
+    ```bash
+    #!/bin/bash
+
+    # Define the files to monitor
+    ENVOY_FILE="envoy.yaml"
+    DEPLOYMENT_FILE="deployment.yaml"
+    LOG_LEVEL_PATTERN="--log-level"
+
+    # Function to send an alert via Alertmanager
+    send_alert() {
+        alert_name=$1
+        curl -XPOST http://localhost:9093/api/v1/alerts -d "[{\"labels\":{\"alertname\":\"${alert_name}\"}}]"
+    }
+
+    # Monitor changes in envoy.yaml and deployment.yaml
+    while true; do
+        change=$(inotifywait -e modify,move_self,create,delete $ENVOY_FILE $DEPLOYMENT_FILE 2>/dev/null)
+        changed_file=$(echo "$change" | awk '{print $1}')
+
+        case $changed_file in
+            "$ENVOY_FILE"*)
+                echo "Changes detected in $ENVOY_FILE"
+                send_alert "EnvoyConfigChange"
+                ;;
+            "$DEPLOYMENT_FILE"*)
+                echo "Changes detected in $DEPLOYMENT_FILE"
+                send_alert "DeploymentConfigChange"
+                ;;
+        esac
+    done
+    ```
+
+3. **Make the script executable**:
+
+    ```bash
+    chmod +x monitor_files.sh
+    ```
+
+### Step 2: Configure Alertmanager to Send Email Alerts
+
+1. **Ensure Alertmanager is configured to send emails** as previously described.
+
+2. **Start or restart Alertmanager** with your configuration:
+
+    ```bash
+    alertmanager --config.file=alertmanager.yml
+    ```
+
+### Step 3: Prometheus Alert Configuration
+
+1. **Ensure Prometheus is configured to integrate with Alertmanager**. Your `prometheus.yml` should include the Alertmanager configuration:
+
+    ```yaml
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - localhost:9093
+
+    rule_files:
+      - "alert_rules.yml"
+    ```
+
+2. **Create alert rules** in the `alert_rules.yml` file. For example:
+
+    ```yaml
+    groups:
+    - name: alert-rules
+      rules:
+      - alert: EnvoyConfigChange
+        expr: vector(1)
+        labels:
+          severity: critical
+        annotations:
+          summary: "Envoy configuration has changed"
+          description: "The envoy.yaml configuration file has been modified."
+
+      - alert: DeploymentConfigChange
+        expr: vector(1)
+        labels:
+          severity: warning
+        annotations:
+          summary: "Deployment configuration has changed"
+          description: "The deployment.yaml file has been modified."
+    ```
+
+3. **Reload Prometheus configuration** to apply the changes.
+
+### Summary
+
+This setup uses `inotifywait` to monitor changes in `envoy.yaml` and `deployment.yaml` files. When a change is detected, the monitoring script triggers an alert via Alertmanager. This approach ensures you receive alerts in real-time whenever these configuration files are modified, whether it's done through direct file edits or any other means that trigger filesystem events.
