@@ -1,3 +1,12 @@
+Certainly! Here's a more professional description for your ticket:
+
+---
+
+For a module in Atlas 2.0, we are required to scan container images. These images are located in the "container-external" repository. Using the current method, we need to transfer them to the "container-sandbox/release" environment for scanning. Our project relies on open-source software that is commonly used across the firm and is accessed from the "container-external" repository. Transferring these images to "container-sandbox/release" would result in duplicate images, leading to inefficiency.
+
+To streamline our workflow and avoid redundancy, we require access to directly scan the images in the "container-external" repository. This access will ensure consistency and efficiency in our processes.
+
+---
 from prometheus_client import start_http_server, Gauge
 import time
 
