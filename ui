@@ -129,3 +129,115 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.body.appendChild(container);
 });
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Group Example</title>
+    <style>
+        .btn-toggle, .btn-toggle:not(:disabled) {
+            color: #505050;
+            font-weight: bold;
+            background: #fff;
+            border-width: 2px;
+            border-color: #e7e7e7;
+            min-width: 75px;
+            margin: 20px;
+            padding: 8px;
+            text-align: center;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .btn-toggle:hover, .btn-toggle:not(:disabled):hover {
+            border-color: #505050;
+        }
+        .btn-toggle:active, .btn-toggle:not(:disabled):not(.disabled).active {
+            color: #004b8d;
+            background: #fff;
+            border-color: #004b8d;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Function to create a button group
+        function createButtonGroup(groupName, buttons) {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'btn-group-toggle';
+            groupDiv.dataset.toggle = 'buttons';
+            
+            buttons.forEach(button => {
+                const label = document.createElement('label');
+                label.className = 'btn btn-toggle';
+                label.style.cssText = 'box-shadow:none; padding-top:8px;';
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = groupName;
+                input.autocomplete = 'off';
+                
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(button));
+                
+                groupDiv.appendChild(label);
+            });
+            
+            // Event listener to manage the radio button behavior
+            groupDiv.addEventListener('click', function(e) {
+                if (e.target.tagName === 'LABEL') {
+                    const labels = groupDiv.querySelectorAll('label');
+                    labels.forEach(label => {
+                        label.classList.remove('active');
+                    });
+                    e.target.classList.add('active');
+                    const radio = e.target.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.checked = true;
+                    }
+                }
+            });
+            
+            return groupDiv;
+        }
+
+        // Function to create the entire container
+        function createContainer() {
+            const container = document.createElement('div');
+            container.className = 'container-fluid';
+
+            // Midland National Group
+            const midlandDiv = document.createElement('div');
+            midlandDiv.className = 'midland';
+            const midlandHeader = document.createElement('h3');
+            midlandHeader.textContent = 'Midland National';
+            midlandDiv.appendChild(midlandHeader);
+            midlandDiv.appendChild(createButtonGroup('midland', ['Yes', 'No']));
+            container.appendChild(midlandDiv);
+
+            // North American Group
+            const northAmericanDiv = document.createElement('div');
+            northAmericanDiv.className = 'north-american';
+            const northAmericanHeader = document.createElement('h3');
+            northAmericanHeader.textContent = 'North American';
+            northAmericanDiv.appendChild(northAmericanHeader);
+            northAmericanDiv.appendChild(createButtonGroup('north-american', ['Monthly', 'Annually', 'One-Time']));
+            container.appendChild(northAmericanDiv);
+
+            return container;
+        }
+
+        // On document ready, add the container to the body
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = createContainer();
+            document.body.appendChild(container);
+        });
+    </script>
+</body>
+</html>
+
