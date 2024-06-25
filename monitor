@@ -1,0 +1,20 @@
+from prometheus_client import start_http_server, Gauge
+import time
+
+# Gauge to expose log level
+log_level_gauge = Gauge('envoy_log_level', 'Current log level of Envoy')
+
+def get_log_level():
+    # Implement logic to fetch log level, e.g., by reading a config file or querying Envoy's admin API
+    # For demonstration, we'll return a fixed value
+    return "info"
+
+if __name__ == "__main__":
+    # Start the Prometheus metrics server
+    start_http_server(8000)
+    
+    while True:
+        log_level = get_log_level()
+        # Set the gauge value based on log level
+        log_level_gauge.set(log_level)
+        time.sleep(30)
