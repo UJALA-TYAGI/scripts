@@ -1,0 +1,53 @@
+image: envoy-image
+        volumeMounts:
+        - readonly: true
+          mountPath: /config
+          name: proxy-config
+        args: [ "--config-path", "/config/envoy-yml", "--log-level" , "info" ]
+        ports:
+        - containerPort: 8080
+      - name: log-level-exporter
+        image: python:3.8-slim
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config
+        command: ["sh", "-c"]
+        args:
+        - |
+          pip install prometheus_client;
+          while true; do
+            log_level=$(grep 'log-level' /config/envoy-yml | awk '{print $2}');
+            if [ "$log_level" == "info" ]; then
+              value=1;
+            elif [ "$log_level" == "debug" ]; then
+              value=2;
+            elif [ "$log_level" == "warn" ]; then
+              value=3;
+            else
+              value=0;
+            fi;
+            echo "# HELP envoy_log_level Current log level of Envoy" > /var/lib/node_exporter/textfile_collector/envoy_log_level.prom;
+            echo "# TYPE envoy_log_level gauge" >> /var/lib/node_exporter/textfile_collector/envoy_log_level.prom;
+            echo "envoy_log_level $value" >> /var/lib/node_exporter/textfile_collector/envoy_log_level.prom;
+            sleep 30;
+          done
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: proxy-config
+          mountPath: /config
+      - name: atlas-kube-proxy
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          runAsNonRoot: true
