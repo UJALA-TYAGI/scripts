@@ -1,0 +1,208 @@
+If we only need to check the log level for the `envoy` container, and we don't need to define the log level separately in the deployment, we can simplify the process. We'll:
+
+1. Use a custom Prometheus exporter to monitor the `envoy` container's arguments.
+2. Write a Go script to check this metric and send an email if the log level changes.
+
+### Step 1: Define a Custom Metric in Prometheus Exporter
+
+We'll create a custom exporter to expose the `envoy` container log level as a metric. Here's the Go code for the exporter:
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	envoyLogLevelMetric = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "envoy_log_level",
+			Help: "Log level of the envoy container",
+		},
+		[]string{"deployment"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(envoyLogLevelMetric)
+}
+
+func main() {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	http.Handle("/metrics", promhttp.Handler())
+
+	go func() {
+		for {
+			updateMetrics(clientset)
+			time.Sleep(30 * time.Second)
+		}
+	}()
+
+	fmt.Println("Starting server on port :8080")
+	http.ListenAndServe(":8080", nil)
+}
+
+func updateMetrics(clientset *kubernetes.Clientset) {
+	deploymentsClient := clientset.AppsV1().Deployments("atlas-controller-authnz")
+
+	deployment, err := deploymentsClient.Get(context.TODO(), "atlas-controller-authnz-deployment", metav1.GetOptions{})
+	if err != nil {
+		fmt.Printf("Error fetching deployment: %v\n", err)
+		return
+	}
+
+	for _, container := range deployment.Spec.Template.Spec.Containers {
+		if container.Name == "envoy" {
+			logLevel := "info" // Default log level
+			for i, arg := range container.Args {
+				if arg == "--log-level" && i+1 < len(container.Args) {
+					logLevel = container.Args[i+1]
+					break
+				}
+			}
+			logLevelValue := 0.0
+			switch logLevel {
+			case "info":
+				logLevelValue = 1.0
+			case "debug":
+				logLevelValue = 2.0
+			case "warn":
+				logLevelValue = 3.0
+			case "error":
+				logLevelValue = 4.0
+			}
+
+			envoyLogLevelMetric.With(prometheus.Labels{"deployment": deployment.Name}).Set(logLevelValue)
+		}
+	}
+}
+```
+
+### Step 2: Write a Go Script to Monitor the Metric and Send an Email
+
+Here's the Go script to query Prometheus for the custom metric and send an email if the log level changes:
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/smtp"
+	"os"
+	"time"
+
+	"github.com/prometheus/client_golang/api"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
+)
+
+const (
+	prometheusURL = "http://prometheus-server-url" // Change this to your Prometheus server URL
+	emailHost     = "smtp.example.com"             // Change to your SMTP server
+	emailPort     = "587"
+	emailUser     = "your-email@example.com"
+	emailPass     = "your-email-password"
+	toEmail       = "team@example.com"
+)
+
+var (
+	previousLogLevel model.SampleValue
+)
+
+func main() {
+	prometheusClient, err := api.NewClient(api.Config{
+		Address: prometheusURL,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	v1api := v1.NewAPI(prometheusClient)
+
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			queryPrometheus(v1api)
+		}
+	}
+}
+
+func queryPrometheus(v1api v1.API) {
+	query := `envoy_log_level{deployment="atlas-controller-authnz-deployment"}`
+	result, warnings, err := v1api.Query(context.Background(), query, time.Now())
+	if err != nil {
+		fmt.Printf("Error querying Prometheus: %v\n", err)
+		return
+	}
+	if len(warnings) > 0 {
+		fmt.Printf("Warnings: %v\n", warnings)
+	}
+
+	vector := result.(model.Vector)
+	if len(vector) > 0 {
+		currentLogLevel := vector[0].Value
+
+		if previousLogLevel != 0 && currentLogLevel != previousLogLevel {
+			sendEmail(previousLogLevel.String(), currentLogLevel.String())
+		}
+
+		previousLogLevel = currentLogLevel
+	}
+}
+
+func sendEmail(oldLogLevel, newLogLevel string) {
+	auth := smtp.PlainAuth("", emailUser, emailPass, emailHost)
+
+	msg := []byte(fmt.Sprintf("Subject: Deployment Log Level Changed\n\nThe log level of the envoy container has changed from %s to %s.", oldLogLevel, newLogLevel))
+
+	err := smtp.SendMail(emailHost+":"+emailPort, auth, emailUser, []string{toEmail}, msg)
+	if err != nil {
+		fmt.Printf("Error sending email: %v\n", err)
+	}
+}
+```
+
+### Step 3: Deploy the Exporter and Monitoring Script
+
+1. **Build and Deploy the Custom Exporter**:
+
+   ```bash
+   go build -o custom-metric-exporter exporter.go
+   ./custom-metric-exporter
+   ```
+
+2. **Run the Monitoring Script**:
+
+   ```bash
+   go build -o log-level-monitor monitor.go
+   ./log-level-monitor
+   ```
+
+Make sure both the exporter and monitoring scripts are running in your Kubernetes cluster or another environment where they can access the Kubernetes API and Prometheus server. Adjust the SMTP server configuration in the monitoring script to your email setup.
+
+This setup will monitor the `envoy` container's log level and send an email alert if it changes.
