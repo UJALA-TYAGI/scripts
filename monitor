@@ -18,3 +18,159 @@ if __name__ == "__main__":
         # Set the gauge value based on log level
         log_level_gauge.set(log_level)
         time.sleep(30)
+
+
+
+To create a custom metric that describes when the log level has been changed, you'll need to:
+
+1. **Capture Log Level Changes in Envoy**: Ensure the logs capture log level changes.
+2. **Scrape and Parse Logs**: Use a tool like Fluentd to scrape and parse the logs.
+3. **Generate a Custom Metric**: Create a custom metric in Prometheus to reflect log level changes.
+
+### 1. Capture Log Level Changes in Envoy
+
+Ensure that log level changes are recorded in the Envoy logs. Assuming Envoy does log these changes, the setup remains similar to before but includes ensuring the logs are detailed enough.
+
+### 2. Scrape and Parse Logs
+
+Use Fluentd to capture and parse Envoy logs.
+
+#### Fluentd Configuration (fluent.conf):
+
+```conf
+<source>
+  @type tail
+  path /var/log/envoy/envoy.log
+  pos_file /var/log/fluentd/envoy.log.pos
+  tag envoy.logs
+  format none
+</source>
+
+<filter envoy.logs>
+  @type parser
+  key_name message
+  <parse>
+    @type regexp
+    expression /.*log level changed to (?<new_log_level>\w+).*/
+  </parse>
+</filter>
+
+<match envoy.logs>
+  @type prometheus
+  <buffer>
+    @type memory
+    flush_interval 10s
+  </buffer>
+  metric_name envoy_log_level_changes
+  <metric>
+    name envoy_log_level_change
+    type counter
+    description "Envoy log level changes"
+    labels new_log_level
+  </metric>
+  <record>
+    new_log_level ${record["new_log_level"]}
+  </record>
+</match>
+```
+
+This configuration assumes that the log message includes a phrase like "log level changed to [new_level]". Adjust the `expression` regex pattern to match the actual log format.
+
+### 3. Generate a Custom Metric
+
+Create a Prometheus rule to monitor the custom metric for log level changes.
+
+#### Prometheus Rule:
+
+```yaml
+groups:
+- name: envoy-log-level-changes
+  rules:
+  - alert: LogLevelChanged
+    expr: increase(envoy_log_level_change[5m]) > 0
+    for: 1m
+    labels:
+      severity: info
+    annotations:
+      summary: "Log level changed"
+      description: "Envoy log level has been changed in the last 5 minutes."
+```
+
+### Deployment YAML Modification
+
+Make sure the Envoy logs are written to a file and mounted correctly.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atlas-controller-authnz-deployment 
+  namespace: atlas-controller-authnz 
+  labels:
+    app: atlas-controller-authnz 
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: atlas-controller-authnz 
+  template:
+    metadata:
+      labels:
+        app: atlas-controller-authnz
+    spec:
+      serviceAccountName: atlas-controller-authnz-sa 
+      securityContext:
+        runAsUser: 999
+      containers:
+      - name: envoy 
+        securityContext:
+          allowPrivilegeEscalation: false 
+          capabilities:
+            drop:
+            - ALL
+          privileged: false 
+          runAsNonRoot: true
+        image: envoy-image 
+        volumeMounts:
+        - readonly: true 
+          mountPath: /config 
+          name: proxy-config 
+        - mountPath: /var/log/envoy
+          name: envoy-logs
+        args: [ "--config-path", "/config/envoy-yml", "--log-level", "info", "--log-path", "/var/log/envoy/envoy.log"]
+        ports:
+        - containerPort: 8080
+      - name: atlas-kube-proxy 
+        securityContext:
+          allowPrivilegeEscalation: false 
+          capabilities:
+            drop:
+            - ALL
+          privileged: false 
+          runAsNonRoot: true
+        image: auth-kube-proxy-image
+        command: [ "kubectl", "proxy", "--port=8001", "--address=0.8.8.0", "--disable-filter", "-v99"]
+        ports:
+        - containerPort: 8001
+      - name: authz-webhook 
+        securityContext:
+          allowPrivilegeEscalation: false 
+          capabilities:
+            drop:
+            - ALL
+          privileged: false 
+          runAsNonRoot: true
+        image: authz-webhook-image 
+        imagePullPolicy: Always 
+        ports:
+        - containerPort: 10003
+        command: [ "/ext-auth/ext-auth", "--log-level", "info" ] 
+      volumes:
+      - name: proxy-config 
+        configMap:
+          name: proxy-config
+      - name: envoy-logs
+        emptyDir: {}
+```
+
+With these configurations, the Fluentd setup will parse Envoy log entries for log level changes and create a Prometheus metric. Prometheus will then monitor this metric and alert when a log level change is detected.
