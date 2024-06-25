@@ -174,3 +174,148 @@ spec:
 ```
 
 With these configurations, the Fluentd setup will parse Envoy log entries for log level changes and create a Prometheus metric. Prometheus will then monitor this metric and alert when a log level change is detected.
+
+
+
+#################################################################################################################################
+
+To set up an Alertmanager that notifies you when the log level has been changed, you need to:
+
+1. **Install Alertmanager**: Ensure you have Alertmanager installed and configured.
+2. **Configure Alertmanager**: Set up Alertmanager to handle alerts from Prometheus and send notifications.
+3. **Create Prometheus Alert Rules**: Define alert rules in Prometheus that trigger when the log level changes.
+4. **Integrate Prometheus with Alertmanager**: Ensure Prometheus is configured to send alerts to Alertmanager.
+
+### 1. Install Alertmanager
+
+If you don’t have Alertmanager installed, you can install it as follows:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ['alertname']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'email-notifications'
+
+    receivers:
+    - name: 'email-notifications'
+      email_configs:
+      - to: 'you@example.com'
+        from: 'alertmanager@example.com'
+        smarthost: 'smtp.example.com:587'
+        auth_username: 'alertmanager@example.com'
+        auth_identity: 'alertmanager@example.com'
+        auth_password: 'yourpassword'
+```
+
+### 2. Create Alertmanager Deployment
+
+Deploy Alertmanager using the configuration above:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:v0.24.0
+        args:
+        - --config.file=/etc/alertmanager/config/alertmanager.yml
+        ports:
+        - containerPort: 9093
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/alertmanager/config
+          subPath: alertmanager.yml
+      volumes:
+      - name: config-volume
+        configMap:
+          name: alertmanager-config
+```
+
+### 3. Create Prometheus Alert Rules
+
+Add a Prometheus alert rule to detect log level changes:
+
+```yaml
+groups:
+- name: envoy-log-level-changes
+  rules:
+  - alert: LogLevelChanged
+    expr: increase(envoy_log_level_change[5m]) > 0
+    for: 1m
+    labels:
+      severity: info
+    annotations:
+      summary: "Log level changed"
+      description: "Envoy log level has been changed in the last 5 minutes."
+```
+
+### 4. Integrate Prometheus with Alertmanager
+
+Ensure your Prometheus configuration includes the Alertmanager endpoint:
+
+```yaml
+global:
+  scrape_interval: 15s
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager.monitoring.svc:9093
+
+rule_files:
+  - "/etc/prometheus/rules/alert-rules.yml"
+
+scrape_configs:
+  - job_name: 'envoy'
+    static_configs:
+    - targets: ['envoy-service:8080']
+```
+
+### Final Steps
+
+1. **Apply Configurations**: Ensure the Prometheus and Alertmanager configurations are applied.
+2. **Deploy**: Deploy Alertmanager and Prometheus with the updated configurations.
+
+With these configurations, Prometheus will send alerts to Alertmanager when the log level changes, and Alertmanager will notify you via the configured email settings.
+
+### Deployment Commands
+
+1. **Create the ConfigMap for Alertmanager**:
+   ```bash
+   kubectl apply -f alertmanager-configmap.yaml
+   ```
+
+2. **Deploy Alertmanager**:
+   ```bash
+   kubectl apply -f alertmanager-deployment.yaml
+   ```
+
+3. **Update Prometheus Configuration**: Ensure the Prometheus configuration is reloaded with the new alert rules and Alertmanager endpoint.
+
+By following these steps, you'll have a working setup where any change in the log level of Envoy is detected by Prometheus and notified to you via Alertmanager.
