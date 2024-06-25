@@ -1,3 +1,38 @@
+import React, { useState } from 'react';
+import { Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from '@mui/material';
+
+function App() {
+  const [selectedValue, setSelectedValue] = useState('Basic');
+
+  const handleChange = (event) => {
+    setSelectedValue(event.target.value);
+    fetchData(event.target.value);
+  };
+
+  const fetchData = (value) => {
+    console.log(`Fetching data for ${value}`);
+    // Add your fetch logic here
+  };
+
+  return (
+    <FormControl component="fieldset">
+      <FormLabel component="legend">Options</FormLabel>
+      <RadioGroup
+        aria-label="options"
+        name="options"
+        value={selectedValue}
+        onChange={handleChange}
+      >
+        <FormControlLabel value="Basic" control={<Radio />} label="Basic" />
+        <FormControlLabel value="Advanced" control={<Radio />} label="Advanced" />
+      </RadioGroup>
+    </FormControl>
+  );
+}
+
+export default App;
+
+
 // Function to create a button group
 function createButtonGroup(container, groupName, buttons) {
     const groupDiv = document.createElement('div');
