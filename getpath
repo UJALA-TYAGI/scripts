@@ -1,0 +1,105 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"os/exec"
+	"strings"
+)
+
+func getImagePaths(yamlData string) ([]string, error) {
+	// Write the YAML data to a temporary file
+	tmpFile, err := os.CreateTemp("", "config-*.yaml")
+	if err != nil {
+		return nil, err
+	}
+	defer tmpFile.Close()
+
+	if _, err := tmpFile.Write([]byte(yamlData)); err != nil {
+		return nil, err
+	}
+	tmpFile.Close()
+
+	// Run the grep command to extract image paths
+	cmd := exec.Command("grep", "-Eo", `registry.*:.*`, tmpFile.Name())
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	// Parse the output of the grep command
+	var paths []string
+	lines := strings.Split(out.String(), "\n")
+	for _, line := range lines {
+		parts := strings.Split(strings.TrimSpace(line), ": ")
+		if len(parts) == 2 {
+			paths = append(paths, parts[1])
+		}
+	}
+
+	return paths, nil
+}
+
+func main() {
+	yamlData := `
+defaultRegistry: containerregistry-na.jomchase.net
+test:
+  image:
+    registry: containerregistry-na.jomchase.net
+    repository: container-external/docker.io/busybox
+    tag: "1.34"
+webhooksCleanup:
+  image:
+    registry: containerregistry-na.jomchase.net
+    repository: container-external/docker.io/bitnami/kubectl
+    tag: "1.24.3"
+cleanupJobs:
+  admissionReports:
+    image:
+      registry: containerregistry-na.Jpmchase.net
+      repository: container-external/docker.io/bitnami/kubecti
+      tag: "1.28.4"
+clusterAdmissionReports:
+  image:
+    registry: containerregistry-na.jpmchase.net
+    repository: container-external/docker.io/bitnami/kubectl
+    tag: "1.28.4"
+admissionController:
+  initContainer:
+    image:
+      registry: containennegistry-na. jpmchase.net
+      repository: container-external/ghcr.jo/kyverno/kyvernopre
+      tag: v1.11.4
+container:
+  image:
+    registry: containerregistry-na.jpmchase.net
+    repository: container-external/ghor.io/kyverno/kyverno
+    tag: v1.11.4
+backgroundController:
+  image:
+    registry: containerregistry-na.jpmchase.net
+    repository: container-external/ghcr.io/kyverno/background-controller
+    tag: v1.11.4
+cleanupController:
+  image:
+    registry: containerregistry-na.jomchase.net
+    repository: container-external/ghcr.io/kyverno/cleanup-controller
+    tag: v1.11.4
+reportscontroller:
+  image:
+    registry: containerregistry-na.jpmchase.net
+    repository: container-external/ghor.io/kyverno/reports-controller
+    tag: V1.21.4
+`
+
+	paths, err := getImagePaths(yamlData)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	for _, path := range paths {
+		fmt.Println(path)
+	}
+}
