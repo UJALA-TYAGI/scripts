@@ -1,0 +1,110 @@
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
+	"gopkg.in/yaml.v2"
+)
+
+type ImageConfig struct {
+	Registry   string `yaml:"registry"`
+	Repository string `yaml:"repository"`
+	Tag        string `yaml:"tag"`
+}
+
+type Config struct {
+	Config struct {
+		DefaultRegistry string `yaml:"defaultRegistry"`
+	} `yaml:"config"`
+	Test struct {
+		Image ImageConfig `yaml:"image"`
+	} `yaml:"test"`
+	WebhooksCleanup struct {
+		Image ImageConfig `yaml:"image"`
+	} `yaml:"webhooksCleanup"`
+	CleanupJobs struct {
+		AdmissionReports struct {
+			Image ImageConfig `yaml:"image"`
+		} `yaml:"admissionReports"`
+	} `yaml:"cleanupJobs"`
+	ClusterAdmissionReports struct {
+		Image ImageConfig `yaml:"image"`
+	} `yaml:"clusterAdmissionReports"`
+	AdmissionController struct {
+		InitContainer struct {
+			Image ImageConfig `yaml:"image"`
+		} `yaml:"initContainer"`
+	} `yaml:"admissionController"`
+	Container struct {
+		Image ImageConfig `yaml:"image"`
+	} `yaml:"container"`
+	BackgroundController struct {
+		Image ImageConfig `yaml:"image"`
+	} `yaml:"backgroundController"`
+	CleanupController struct {
+		Image ImageConfig `yaml:"image"`
+	} `yaml:"cleanupController"`
+	ReportsController struct {
+		Image ImageConfig `yaml:"image"`
+	} `yaml:"reportsController"`
+}
+
+func GetImagePaths() ([]string, error) {
+	// Read the YAML file
+	yamlFile, err := ioutil.ReadFile("manifests/overlays/alpha-ida-dev/values.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the YAML file into the Config struct
+	var config Config
+	err = yaml.Unmarshal(yamlFile, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect image paths
+	imagePaths := make([]string, 0)
+
+	// Helper function to process ImageConfig and append to imagePaths
+	processImage := func(image ImageConfig) {
+		if image.Registry != "" && image.Repository != "" {
+			imagePath := fmt.Sprintf("%s/%s:%s", image.Registry, image.Repository, image.Tag)
+			imagePath = strings.Replace(imagePath, "container-external", "container-release", 1)
+			imagePath = strings.Replace(imagePath, "docker.io", "spyder", 1)
+			imagePath = strings.Replace(imagePath, "quay.io", "spyder", 1)
+			imagePaths = append(imagePaths, imagePath)
+		}
+	}
+
+	// Process all the images in the config
+	processImage(config.Test.Image)
+	processImage(config.WebhooksCleanup.Image)
+	processImage(config.CleanupJobs.AdmissionReports.Image)
+	processImage(config.ClusterAdmissionReports.Image)
+	processImage(config.AdmissionController.InitContainer.Image)
+	processImage(config.Container.Image)
+	processImage(config.BackgroundController.Image)
+	processImage(config.CleanupController.Image)
+	processImage(config.ReportsController.Image)
+
+	// Add proxyV2ImagePath if needed (assuming it's defined somewhere in the actual code)
+	// imagePaths = append(imagePaths, proxyV2ImagePath)
+
+	return imagePaths, nil
+}
+
+func main() {
+	imagePaths, err := GetImagePaths()
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+
+	for _, path := range imagePaths {
+		fmt.Println(path)
+	}
+}
