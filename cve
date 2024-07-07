@@ -8,3 +8,40 @@ func runRevive() {
 	}
 	fmt.Printf("revive output:\n%s\n", out.String())
 }
+
+
+Certainly! Let's delve into a detailed explanation of each function in your Go code:
+
+1. **runRevive()**:
+   - **Purpose**: This function runs the `revive` linter command using Go's `exec` package. It captures the output and prints it to the console.
+   - **Details**: It ensures that your Go code adheres to coding standards and best practices defined in your `revive.toml` configuration file. It's typically used to maintain code quality and consistency across the project.
+
+2. **authorize(username, password, clientID, resource, idaURL string) (string, bool)**:
+   - **Purpose**: Handles authentication by obtaining an access token for API calls.
+   - **Details**: It performs a POST request to the specified `idaURL` (IdentityAnywhere URL) with credentials (`username`, `password`, `clientID`, `resource`). Upon successful authentication, it returns the access token as a string and a boolean indicating if the authorization was successful.
+
+3. **getEnvDetails() (string, string, string)**:
+   - **Purpose**: Retrieves environment-specific details required for API calls, such as URLs and resources.
+   - **Details**: Returns the IDA URL (`idaURL`), production resource (`PROD_RESOURCE`), and production scan URL (`PROD_SCAN_URL`). These details are crucial for configuring and executing API requests within the specific environment.
+
+4. **splitImagePath(imagePath string) (string, string, string)**:
+   - **Purpose**: Parses a container image path into its components: registry, repository, and tag.
+   - **Details**: It splits the `imagePath` string based on specific delimiters (`:`, `/`) to extract and return three components: `registry`, `repository`, and `tag`. This function facilitates handling and processing of container image information during scanning operations.
+
+5. **run(username, password, clientID, imagePath string) []byte**:
+   - **Purpose**: Manages the process of scanning a container image for vulnerabilities.
+   - **Details**: This function integrates authentication (`authorize`), issues a scan request to the specified `scanURL`, monitors scan status, and retrieves scan results. It returns the scan results as a byte array (`[]byte`) containing JSON data detailing vulnerabilities (`CVEs`) found during the scan.
+
+6. **getImagePaths() []string**:
+   - **Purpose**: Reads container image paths from a YAML file.
+   - **Details**: Opens and reads the `imagePaths.yaml` file to retrieve paths (`imagePaths`) of container images that need to be scanned. It returns these paths as a slice of strings (`[]string`), enabling subsequent processing and scanning of each image.
+
+7. **notifyAuthNZTeam()**:
+   - **Purpose**: Sends an email notification to the authentication and authorization team (`AuthNZ`) with a scan report attached.
+   - **Details**: Constructs an email message with scan results attached as a gzip-compressed JSON file (`scan_report.json.gz`). It uses SMTP (`JPMC_SMTP_HOST`) to establish a connection and deliver the email to recipients (`AUTHNZ_TEAM_MAIL`). This function ensures that relevant teams are promptly informed about vulnerabilities discovered during image scanning.
+
+8. **writeToFile(cves [][]byte)**:
+   - **Purpose**: Writes CVE (Common Vulnerabilities and Exposures) data to a file.
+   - **Details**: Takes a slice of `[]byte` containing CVE data (`cves`) and writes it to `scan_report.json.gz`. This file serves as a structured record of vulnerabilities identified during the scanning process. The data is compressed using gzip for efficient storage and transmission.
+
+These functions collectively handle various aspects of container image scanning, authentication, environment configuration, result processing, notification, and data persistence. They are designed to work together seamlessly to automate and streamline the security assessment of containerized applications.
