@@ -1,0 +1,26 @@
+func WriteToFile(cves [][]byte) {
+	outFile, err := os.Create(SCAN_REPORT_FILE)
+	if err != nil {
+		log.Fatalf("Error creating scan report file: %v", err)
+	}
+	defer func() {
+		if err := outFile.Close(); err != nil {
+			log.Printf("Error closing scan report file: %v", err)
+		}
+	}()
+
+	zipWriter := gzip.NewWriter(outFile)
+	defer func() {
+		if err := zipWriter.Close(); err != nil {
+			log.Printf("Error closing zip writer: %v", err)
+		}
+	}()
+
+	for _, cve := range cves {
+		if _, err := zipWriter.Write(cve); err != nil {
+			log.Fatalf("Error writing to scan report file: %v", err)
+		}
+	}
+
+	log.Println("Successfully wrote scan report to file")
+}
