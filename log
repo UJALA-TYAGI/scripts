@@ -31,3 +31,79 @@ if username == "" || password == "" {
 		log.Fatal("Environment variables USERNAME and PASSWORD must be set")
 		os.Exit(1)
 	}
+
+
+
+func NotifyAuthNZTeam() {
+	from := EMAIL_FROM
+	recipients := []string{AUTHNZ_TEAM_MAIL}
+
+	content, err := os.ReadFile(SCAN_REPORT_FILE)
+	if err != nil {
+		log.Fatalf("Error reading scan report file: %v", err)
+	}
+	encodedContent := base64.StdEncoding.EncodeToString(content)
+
+	for _, recipient := range recipients {
+		date := time.Now()
+		fromField := fmt.Sprintf("From: %s\r\n", from)
+		to := fmt.Sprintf("To: %s\r\n", recipient)
+		subject := fmt.Sprintf("Subject: Imp! Container image scan report containing CVEs for atlas-controller-authnz images as on %d-%d-%d\r\n", date.Day(), date.Month(), date.Year())
+		body := fmt.Sprintf("\r\n<html><body>%v</body></html>", htmlContent.String())
+		mime := "MIME-version: 1.0;\r\nContent-Type: multipart/mixed; boundary=BOUNDARY;\r\n"
+		msg := []byte(
+			fromField +
+				to + subject + mime +
+				"\r\n--BOUNDARY\r\n" +
+				"Content-Type: text/plain; charset=\"utf-8\"\r\n" +
+				"Content-Transfer-Encoding: base64\r\n" +
+				"Content-Disposition: attachment; filename=" + SCAN_REPORT_FILE + "\r\n" +
+				"\r\n" + encodedContent +
+				"\r\n--BOUNDARY\r\n" +
+				"Content-Type: text/html; charset=\"utf-8\"\r\n" + body)
+
+		smtpHost := JPMC_SMTP_HOST
+		port := 25
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", smtpHost, port))
+		if err != nil {
+			log.Fatalf("Error dialing SMTP server: %v", err)
+		}
+		defer conn.Close()
+
+		c, err := smtp.NewClient(conn, smtpHost)
+		if err != nil {
+			log.Fatalf("Error creating SMTP client: %v", err)
+		}
+		defer c.Quit()
+
+		tlsConfig := tls.Config{ServerName: smtpHost}
+		err = c.StartTLS(&tlsConfig)
+		if err != nil {
+			log.Fatalf("Error starting TLS: %v", err)
+		}
+
+		if err = c.Mail(from); err != nil {
+			log.Fatalf("Error setting mail sender: %v", err)
+		}
+		if err = c.Rcpt(recipient); err != nil {
+			log.Fatalf("Error setting mail recipient: %v", err)
+		}
+
+		w, err := c.Data()
+		if err != nil {
+			log.Fatalf("Error getting SMTP data writer: %v", err)
+		}
+
+		if _, err = w.Write(msg); err != nil {
+			log.Fatalf("Error writing email message: %v", err)
+		}
+
+		err = w.Close()
+		if err != nil {
+			log.Fatalf("Error closing SMTP data writer: %v", err)
+		}
+
+		log.Printf("Sent mail with attached scan report to: %s", AUTHNZ_TEAM_MAIL)
+	}
+}
+
