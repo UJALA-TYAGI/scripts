@@ -1,105 +1,198 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"compress/gzip"
+	"crypto/tls"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"os/exec"
+	"io"
+	"log"
+	"net"
+	"net/http"
+	"net/smtp"
+	"os"
 	"strings"
+	"time"
 )
 
-func getImagePaths(yamlData string) ([]string, error) {
-	// Write the YAML data to a temporary file
-	tmpFile, err := os.CreateTemp("", "config-*.yaml")
+const (
+	IDA_CLIENT_ID      = "PC-102491-SID-43498-PROD"
+	PROD_RESOURCE      = "IPMC:URI:RS-102491-24576-AquaImageScanner-PROD"
+	PROD_SCAN_URL      = "https://imagescanning-ipmchase.net"
+	AUTHNZ_TEAM_MAIL   = "AtlasFactory_Auth@restricted.chase.com"
+	EMAIL_FROM         = "no-reply-jules-build@jpmchase.net"
+	JPMC_SMTP_HOST     = "mailhost.jpmchase.net"
+	PROD_IDA_URL       = "https://idag2.ipmorganchase.com/adfs/oauth2/token/"
+	SCAN_REPORT_FILE   = "scan_report.json.gz"
+)
+
+func Authorise(username, password, client_id, resource, ida_url string) (string, bool) {
+	resp, err := http.PostForm(ida_url, url.Values{
+		"Content-Type": {"application/json"},
+		"Accept":       {"application/json"},
+		"username":     {username},
+		"password":     {password},
+		"grant_type":   {"password"},
+		"resource":     {resource},
+		"client_id":    {client_id},
+	})
+
 	if err != nil {
-		return nil, err
+		log.Printf("Post request Errored: %v", err)
+		return "", false
 	}
-	defer tmpFile.Close()
+	defer resp.Body.Close()
 
-	if _, err := tmpFile.Write([]byte(yamlData)); err != nil {
-		return nil, err
-	}
-	tmpFile.Close()
-
-	// Run the grep command to extract image paths
-	cmd := exec.Command("grep", "-Eo", `registry.*:.*`, tmpFile.Name())
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	if err := cmd.Run(); err != nil {
-		return nil, err
+	var ida_response map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&ida_response); err != nil {
+		log.Printf("Error decoding response: %v", err)
+		return "", false
 	}
 
-	// Parse the output of the grep command
-	var paths []string
-	lines := strings.Split(out.String(), "\n")
-	for _, line := range lines {
-		parts := strings.Split(strings.TrimSpace(line), ": ")
-		if len(parts) == 2 {
-			paths = append(paths, parts[1])
+	token, ok := ida_response["access_token"]
+	if !ok || len(token) == 0 {
+		log.Println("Not authorised with idAnywhere")
+		return "", false
+	}
+	log.Println("Authorised successfully with idAnywhere")
+	return token, true
+}
+
+func GetEnvDetails() (string, string, string) {
+	return PROD_IDA_URL, PROD_RESOURCE, PROD_SCAN_URL
+}
+
+var token string
+
+func SplitImagePath(image_path string) (string, string, string) {
+	tag_split := strings.Split(image_path, ":")
+	tag := tag_split[1]
+
+	splitted := strings.SplitN(image_path, "/", 2)
+	registry := splitted[0]
+
+	splitted_repository := strings.Split(splitted[1], ":")
+	repository := splitted_repository[0]
+
+	return registry, repository, tag
+}
+
+func Run(username, password, client_id, image_path string) []byte {
+	ida_url, resource, scan_url := GetEnvDetails()
+	authorized := true
+	if token == "" {
+		log.Printf("username: %s, password: %s, client_id: %s", username, password, client_id)
+		token, authorized = Authorise(username, password, client_id, resource, ida_url)
+		log.Printf("token: %s, authorized: %t", token, authorized)
+	}
+	if !authorized {
+		log.Println("Not authorised - unable to continue. Check the error message, correct and rerun")
+		os.Exit(-1)
+	}
+
+	registry, repository, tag := SplitImagePath(image_path)
+	client := &http.Client{}
+	scanParams := map[string]string{
+		"registry":    registry,
+		"repository":  repository,
+		"tag":         tag,
+		"FilterByFix": "true",
+	}
+
+	jsonifiedScanParams, _ := json.Marshal(scanParams)
+	req, _ := http.NewRequest("POST", scan_url+"/api/1/scan", bytes.NewBuffer(jsonifiedScanParams))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+
+	issuedScan, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("Unable to issue Scan request to the repository: %s, error: %v", repository, err)
+	}
+	defer issuedScan.Body.Close()
+
+	issuedScanResp, _ := io.ReadAll(issuedScan.Body)
+	issuedScanRespMap := make(map[string]string)
+	json.Unmarshal(issuedScanResp, &issuedScanRespMap)
+	if issuedScanRespMap["status"] == "SCAN_REQUEST_ISSUED" && issuedScan.Status == "200 OK" {
+		for maxAttempts := 10; maxAttempts >= 0; maxAttempts-- {
+			log.Println("Polling for the scan report status of " + image_path + " | " + fmt.Sprint(maxAttempts) + " checks left")
+			req, _ := http.NewRequest("POST", scan_url+"/api/v1/status", bytes.NewBuffer(jsonifiedScanParams))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Add("Authorization", "Bearer "+token)
+			issuedScanStatus, _ := client.Do(req)
+			defer issuedScanStatus.Body.Close()
+			issuedScanReport, _ := io.ReadAll(issuedScanStatus.Body)
+			var issuedScanReportMap map[string]interface{}
+			json.Unmarshal(issuedScanReport, &issuedScanReportMap)
+			if issuedScanReportMap["status"] == "SCANNED" || issuedScanReportMap["status"] == "FAILED" {
+				return issuedScanReport
+			} else {
+				time.Sleep(10 * time.Second)
+			}
 		}
+		return make([]byte, 0)
 	}
-
-	return paths, nil
+	return make([]byte, 0)
 }
 
-func main() {
-	yamlData := `
-defaultRegistry: containerregistry-na.jomchase.net
-test:
-  image:
-    registry: containerregistry-na.jomchase.net
-    repository: container-external/docker.io/busybox
-    tag: "1.34"
-webhooksCleanup:
-  image:
-    registry: containerregistry-na.jomchase.net
-    repository: container-external/docker.io/bitnami/kubectl
-    tag: "1.24.3"
-cleanupJobs:
-  admissionReports:
-    image:
-      registry: containerregistry-na.Jpmchase.net
-      repository: container-external/docker.io/bitnami/kubecti
-      tag: "1.28.4"
-clusterAdmissionReports:
-  image:
-    registry: containerregistry-na.jpmchase.net
-    repository: container-external/docker.io/bitnami/kubectl
-    tag: "1.28.4"
-admissionController:
-  initContainer:
-    image:
-      registry: containennegistry-na. jpmchase.net
-      repository: container-external/ghcr.jo/kyverno/kyvernopre
-      tag: v1.11.4
-container:
-  image:
-    registry: containerregistry-na.jpmchase.net
-    repository: container-external/ghor.io/kyverno/kyverno
-    tag: v1.11.4
-backgroundController:
-  image:
-    registry: containerregistry-na.jpmchase.net
-    repository: container-external/ghcr.io/kyverno/background-controller
-    tag: v1.11.4
-cleanupController:
-  image:
-    registry: containerregistry-na.jomchase.net
-    repository: container-external/ghcr.io/kyverno/cleanup-controller
-    tag: v1.11.4
-reportscontroller:
-  image:
-    registry: containerregistry-na.jpmchase.net
-    repository: container-external/ghor.io/kyverno/reports-controller
-    tag: V1.21.4
-`
-
-	paths, err := getImagePaths(yamlData)
+func GetImagePaths() []string {
+	imagePaths := make([]string, 0)
+	file, err := os.Open("ci/utils/imagePaths.yaml")
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		return
+		log.Fatal(err)
 	}
-
-	for _, path := range paths {
-		fmt.Println(path)
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		images := scanner.Text()
+		splitted := strings.Split(images, ": ")
+		image := splitted[1]
+		imagePaths = append(imagePaths, image)
 	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return imagePaths
 }
+
+func NotifyAuthNZTeam() {
+	from := EMAIL_FROM
+	recipients := []string{AUTHNZ_TEAM_MAIL}
+	content, err := os.ReadFile(SCAN_REPORT_FILE)
+	if err != nil {
+		log.Fatalf("Error reading scan report file: %v", err)
+	}
+	encodedContent := base64.StdEncoding.EncodeToString(content)
+	for _, recipient := range recipients {
+		date := time.Now()
+		fromField := fmt.Sprintf("From: %s\r\n", from)
+		to := fmt.Sprintf("To: %s\r\n", recipient)
+		subject := fmt.Sprintf("Subject: Imp! Container image scan report containing CVEs for atlas-controller-authnz images as on %d-%d-%d\r\n", date.Day(), date.Month(), date.Year())
+		body := fmt.Sprintf("\r\n<html><body>%v</body></html>", htmlContent.String())
+		mime := "MIME-version: 1.0;\r\nContent-Type: multipart/mixed; boundary=BOUNDARY;\r\n"
+		msg := []byte(fromField + to + subject + mime +
+			"\r\n--BOUNDARY\r\n" +
+			"Content-Type: text/plain; charset=\"utf-8\"\r\n" +
+			"Content-Transfer-Encoding: base64\r\n" +
+			"Content-Disposition: attachment;filename=" + SCAN_REPORT_FILE + "\r\n" +
+			"\r\n" + encodedContent +
+			"\r\n--BOUNDARY\r\n" +
+			"Content-Type: text/html; charset=\"utf-8\"\r\n" + body)
+
+		smtpHost := JPMC_SMTP_HOST
+		port := 25
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", smtpHost, port))
+		if err != nil {
+			log.Fatal(err)
+		}
+		c, err := smtp.NewClient(conn, smtpHost)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer c.Quit()
+
+		tlsConfig := tls.Config{ServerName: smtpHost}
+		if err
