@@ -1,0 +1,55 @@
+Certainly! Below is a template for an Excel sheet that you can use for volunteers to nominate their preferred activities. This sheet includes sections describing SEP PROPEL, the role and responsibilities of volunteers, the benefits they will gain, and a section for them to nominate themselves for specific activities.
+
+### SEP PROPEL Volunteer Nomination Sheet
+
+| **Section**                          | **Description**                                                                                                                                                        |  
+|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|  
+| **What is SEP PROPEL?**              | SEP PROPEL is a three-month program designed to empower high-performing SEPs with opportunities to work on cutting-edge revolutionary technologies, driving business needs. |  
+| **Volunteer Role & Responsibilities**| **1 Volunteer per project**: Acts as Scrum Master, manages learning logs, progress timelines, meetings, comms, facilitates mid-point check-in, handover plans, and executes showcases. **Additional Responsibilities**: Sends comms/updates, assists in SEP-project mapping. |  
+| **Volunteer Benefits**               | Volunteers will work beyond their daily BAU, manage a large-scale program, network with senior leaders, work closely with E2s, and gain visibility within the firm.     |  
+
+### Activities and Responsibilities
+
+| **Activity**          | **Responsibilities**                                                |  
+|-----------------------|----------------------------------------------------------------------|  
+| **Agile Master**      | Scrum Master role, manage learning logs, progress timelines, manage meetings and comms, facilitate mid-point check-in and handover plans, plan and execute showcases. |  
+| **Comms**             | Sending out communications and updates whenever required.          |  
+| **Recruitment**       | Help with the recruitment process by mapping SEPs with projects.   |  
+
+### Nomination Section
+
+| **Activity**      | **Agile Master** | **Comms** | **Recruitment** |  
+|-------------------|------------------|-----------|------------------|  
+| **Volunteer Name**|                  |           |                  |  
+| **Email**         |                  |           |                  |  
+
+You can format this in Excel to make it more user-friendly. Below is a sample layout in text form:
+
+```
+SEP PROPEL Volunteer Nomination Sheet
+
+What is SEP PROPEL?
+SEP PROPEL is a three-month program designed to empower high-performing SEPs with opportunities to work on cutting-edge revolutionary technologies, driving business needs.
+
+Volunteer Role & Responsibilities
+1 Volunteer per project: Acts as Scrum Master, manages learning logs, progress timelines, meetings, comms, facilitates mid-point check-in, handover plans, and executes showcases. 
+Additional Responsibilities: Sends comms/updates, assists in SEP-project mapping.
+
+Volunteer Benefits
+Volunteers will work beyond their daily BAU, manage a large-scale program, network with senior leaders, work closely with E2s, and gain visibility within the firm.
+
+Activities and Responsibilities
+| Activity     | Responsibilities |
+|--------------|------------------|
+| Agile Master | Scrum Master role, manage learning logs, progress timelines, manage meetings and comms, facilitate mid-point check-in and handover plans, plan and execute showcases. |
+| Comms        | Sending out communications and updates whenever required. |
+| Recruitment  | Help with the recruitment process by mapping SEPs with projects. |
+
+Nomination Section
+| Activity     | Agile Master | Comms | Recruitment |
+|--------------|--------------|-------|-------------|
+| Volunteer Name |           |      |             |
+| Email          |           |      |             |
+```
+
+When creating this in Excel, ensure that each section is clearly labeled and visually distinct for ease of reading and input. Volunteers should be able to enter their names and email addresses in the appropriate columns under the Nomination Section.
