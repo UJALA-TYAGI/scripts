@@ -24,3 +24,10 @@ func WriteToFile(cves [][]byte) {
 
 	log.Println("Successfully wrote scan report to file")
 }
+
+
+
+if username == "" || password == "" {
+		log.Fatal("Environment variables USERNAME and PASSWORD must be set")
+		os.Exit(1)
+	}
