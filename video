@@ -1,0 +1,13 @@
+**Pitch:**  
+
+*"At JPMorgan Chase, we’ve always been ahead of the curve with cloud adoption, but with Atlas 1.0, we faced limitations. All resources had the same configuration, and there was no flexibility in how different teams could interact with the cloud. That’s where **Atlas 2.0** comes in—a major leap forward. It’s not just a cloud platform; it’s a customizable, secure, and intelligent control plane, built to adapt to the needs of every user, based on their unique roles and tasks.  
+
+Imagine this: A developer needs access to deploy applications in Kubernetes, but only within their designated environment. An architect needs the flexibility to configure the cloud differently from others. With **Atlas 2.0**, this is possible. Our solution revolves around two key modules: **AuthNZ** and **Trust Service**, working in harmony to provide tailored security and seamless resource validation.  
+
+AuthNZ is our gatekeeper. It authenticates users with IDAnywhere, checks their access tokens, and then—crucially—ensures they’re only authorized for what they need. This means that every user gets the right permissions, based on their specific needs and the role they play in the cloud ecosystem. It’s a level of precision we didn’t have with Atlas 1.0, where everyone had the same blanket configuration.  
+
+Then, we have the **Trust Service**, the integrity enforcer. It validates every resource before it’s allowed into the system, ensuring everything is in its right place, correctly configured, and compliant. With the ability to expose secure APIs, Trust Service ensures external platforms like IEP can seamlessly interact with the cloud without compromising security.  
+
+What makes this even more powerful? We’re not reinventing the wheel—**we’re using open-source technologies** to power these innovations. By integrating **Envoy** for traffic management in AuthNZ and **Rego** for policy enforcement in Trust Service, we’re able to build a flexible, scalable, and cost-effective solution that aligns with JPMorgan Chase’s vision for the future. These open-source tools help us innovate faster, scale seamlessly, and adapt to ever-changing needs.  
+
+At the end of the day, Atlas 2.0 is not just about controlling cloud resources. It’s about empowering people—giving them the right tools and the right permissions, all while maintaining trust and security at every step. We’ve created a platform that’s not only secure but intelligently adaptable to the way different teams at JPMorgan Chase work. That’s the power of Atlas 2.0."*
