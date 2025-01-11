@@ -1,0 +1,132 @@
+If you prefer to avoid using a ConfigMap and want the job to directly pick up policies and test cases from specific directories, you can achieve this by mounting the directories containing your policies and test cases into the job's container. Here's how to set it up:
+
+---
+
+### Folder Structure
+```
+/your-application/
+  /policies/
+    policy1.yaml
+    policy2.yaml
+  /tests/
+    test1.yaml
+    test2.yaml
+```
+
+### Test Scenarios
+1. **Single Test File for All Policies**:
+   - You can create a single test file (`test.yaml`) that references multiple policies in the same test definition. 
+
+2. **Multiple Test Files**:
+   - You can create separate test files (`test1.yaml`, `test2.yaml`) for different policies and run them iteratively in the job.
+
+---
+
+### Example Job YAML for Single Test File
+If you have one test file (`test.yaml`) that tests all policies, you can structure the job like this:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kyverno-test-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: kyverno-cli
+        image: <your_registry>/kyverno-cli:latest
+        command: ["/usr/local/bin/kyverno"]
+        args:
+        - "test"
+        - "/policies"
+        - "--source"
+        - "/tests/test.yaml"
+        volumeMounts:
+        - name: policy-volume
+          mountPath: /policies
+        - name: test-volume
+          mountPath: /tests
+      volumes:
+      - name: policy-volume
+        hostPath:
+          path: /your-application/policies
+      - name: test-volume
+        hostPath:
+          path: /your-application/tests
+      restartPolicy: Never
+```
+
+- **Policies**: All policies from `/policies` are automatically included.
+- **Tests**: The single `test.yaml` file in `/tests` tests all policies.
+
+---
+
+### Example Job YAML for Multiple Test Files
+If you have multiple test files and want the job to run all tests sequentially, you can use a script:
+
+#### Job YAML with Script
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kyverno-test-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: kyverno-cli
+        image: <your_registry>/kyverno-cli:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          for test_file in /tests/*.yaml; do
+            echo "Running tests from $test_file"
+            kyverno test /policies --source $test_file || exit 1
+          done
+        volumeMounts:
+        - name: policy-volume
+          mountPath: /policies
+        - name: test-volume
+          mountPath: /tests
+      volumes:
+      - name: policy-volume
+        hostPath:
+          path: /your-application/policies
+      - name: test-volume
+        hostPath:
+          path: /your-application/tests
+      restartPolicy: Never
+```
+
+#### Explanation
+1. **Script to Loop Through Test Files**:
+   - The `for` loop in the `args` iterates through all YAML files in `/tests/`.
+   - For each test file, it runs `kyverno test` with all policies in `/policies`.
+
+2. **Failure Handling**:
+   - If a test fails, the job exits with a non-zero code (`exit 1`), causing the job to fail.
+
+---
+
+### Key Points
+- **Single Test File**: Easier to manage but can become large if there are many scenarios for different policies.
+- **Multiple Test Files**: More modular, allows you to organize tests specific to each policy, but requires a script to iterate through them.
+
+---
+
+### Testing Locally
+To validate your setup locally, you can run:
+
+```bash
+# Single test file
+kyverno test /path/to/policies --source /path/to/tests/test.yaml
+
+# Multiple test files
+for test_file in /path/to/tests/*.yaml; do
+  kyverno test /path/to/policies --source $test_file
+done
+```
+
+Let me know if you need further assistance!
