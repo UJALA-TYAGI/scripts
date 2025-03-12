@@ -1,0 +1,13 @@
+- match:
+    safe_regex:
+      regex: "^/(dev1|indus|indus-blue)/(api|apis|openapi|$)(/.*)?"
+  route:
+    cluster: upstream-service
+    regex_rewrite:
+      pattern:
+        regex: "^/(?:dev1|indus|indus-blue)/(api|apis|openapi|$)(/.*)?"
+      substitution: "/\2\3"
+    typed_per_filter_config:
+      envoy.filters.http.ext_authz:
+        "@type": type.googleapis.com/envoy.config.route.v3.FilterConfig
+        disabled: true
