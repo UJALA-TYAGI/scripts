@@ -25,6 +25,7 @@ Thank you.
 
 Hello everyone,
 
+
 I'm Ujala Tyagi, a SEP from the 2023 batch, currently working in IP with the Spyder Indus Team. Alongside my partner-in-crime, Ikshul, I serve as a SEP Engineering Committee Lead, proudly representing the ECTC community.
 
 Today, we're diving into the fantastic programs ECTC runs for BTC. ECTC is all about nurturing the firm's young talents, like SEPs and other new joiners who are still figuring out what "corporate life" actually means (spoiler: it’s more coffee and less sleep).
@@ -50,3 +51,20 @@ Reflecting on our journey, it’s clear these initiatives are vital in building 
 As we move forward, let’s remember: "Alone, we can do so little; together, we can do so much." Together, we can build a more connected and empowered JPMC.
 
 And with that, I’ll hand it over to Ikshul—take it away, partner!
+
+
+
+
+
+// @Summary Resolved JRN Location or Redirect
+// @Description Returns the JRN location or redirects if `redirect=true`
+// @Tags Resolver
+// @Accept json
+// @Produce json
+// @Param jrnID path string true "JRN ID"
+// @Param redirect query bool false "Redirect instead of resolving to object"
+// @Success 200 {object} resolver.LocationResponse
+// @Failure 400 {object} gin.H
+// @Security OAuth2Implicit || ApiKeyAuth
+// @Router /naming/apis/resolver/v1/jrnmappings/{jrnID} [get]
+
