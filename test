@@ -1,0 +1,100 @@
+func (suite *APITestSuite) TestGetJrnLocation() {
+	tests := []struct {
+		name           string
+		jrn            string
+		expectedStatus int
+		expectedBody   string
+		mockSetup      func()
+	}{
+		{
+			name:           "Success",
+			jrn:            suite.validJrn,
+			expectedStatus: http.StatusOK,
+			expectedBody:   suite.JrnURL,
+			mockSetup:      suite.mockSuccess,
+		},
+		{
+			name:           "Redirect",
+			jrn:            suite.validJrn + "?redirect=true",
+			expectedStatus: http.StatusSeeOther,
+			expectedBody:   suite.ClusterURL,
+			mockSetup:      suite.mockRedirect,
+		},
+		{
+			name:           "RedirectError",
+			jrn:            suite.validJrn + "?redirect=true",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "error resolving JRN location",
+			mockSetup:      suite.mockRedirectError,
+		},
+		{
+			name:           "InvalidJrn",
+			jrn:            "invalid-jrn",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "string is not a valid JRN",
+			mockSetup:      func() {}, // No mocks needed
+		},
+		{
+			name:           "Error",
+			jrn:            suite.validJrn,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "error fetching resource",
+			mockSetup:      suite.mockGeneralError,
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			suite.TearDownTest() // Reset mocks between tests
+			suite.SetupTest()    // Reinitialize router, controller, etc.
+			tt.mockSetup()
+
+			req, err := http.NewRequest(http.MethodGet, "/apis/resolver/v1/jrnmappings/"+tt.jrn, http.NoBody)
+			suite.Require().NoError(err)
+
+			w := httptest.NewRecorder()
+			suite.router.ServeHTTP(w, req)
+
+			suite.Equal(tt.expectedStatus, w.Code)
+			suite.Contains(w.Body.String(), tt.expectedBody)
+		})
+	}
+}
+
+func (suite *APITestSuite) mockSuccess() {
+	suite.mockDiscoveryClient.EXPECT().
+		GetResource(mock.Anything).
+		Return(&apidiscoveryv2.APIResourceDiscovery{
+			Resource: "awsmktplwb",
+			ResponseKind: &v1.GroupVersionKind{
+				Group:   "atlas",
+				Version: "v1",
+				Kind:    "awemktplwb",
+			},
+		}, nil)
+}
+
+func (suite *APITestSuite) mockRedirect() {
+	suite.mockDiscoveryClient.EXPECT().
+		GetResource(mock.Anything).
+		Return(&apidiscoveryv2.APIResourceDiscovery{
+			Resource: "awsmktplwb",
+			ResponseKind: &v1.GroupVersionKind{
+				Group:   "atlas",
+				Version: "v1",
+				Kind:    "awemktplwb",
+			},
+		}, nil)
+}
+
+func (suite *APITestSuite) mockRedirectError() {
+	suite.mockDiscoveryClient.EXPECT().
+		GetResource(mock.Anything).
+		Return(nil, errors.New("error resolving JRN location"))
+}
+
+func (suite *APITestSuite) mockGeneralError() {
+	suite.mockDiscoveryClient.EXPECT().
+		GetResource(mock.Anything).
+		Return(nil, errors.New("error fetching resource"))
+}
