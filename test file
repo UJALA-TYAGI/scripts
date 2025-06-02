@@ -1,0 +1,124 @@
+package clients_test
+
+import (
+    "context"
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+
+    apidiscoveryv2 "yourproject/path/to/apis/discovery/v2" // replace with your actual import path
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/runtime"
+    "k8s.io/apimachinery/pkg/runtime/serializer"
+    "k8s.io/client-go/rest"
+
+    "yourproject/path/to/clients" // replace with your actual import path
+
+    "github.com/stretchr/testify/suite"
+)
+
+type ClientTestSuite struct {
+    suite.Suite
+    server       *httptest.Server
+    config       *rest.Config
+    client       clients.DiscoveryClient
+    requestCount int
+}
+
+func (suite *ClientTestSuite) SetupSuite() {
+    suite.requestCount = 0
+
+    suite.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        suite.requestCount++
+        suite.Equal("/apis", r.URL.Path)
+
+        w.Header().Set("Content-Type", "application/json")
+
+        response := apidiscoveryv2.APIGroupDiscoveryList{
+            Items: []apidiscoveryv2.APIGroupDiscovery{
+                {
+                    Versions: []apidiscoveryv2.APIVersionDiscovery{
+                        {
+                            Version: "v1",
+                            Resources: []apidiscoveryv2.APIResourceDiscovery{
+                                {
+                                    Resource: "awsmktplwb",
+                                    ResponseKind: &metav1.GroupVersionKind{
+                                        Group:   "marketplace-retail.atlas.aws.jpmchase.net",
+                                        Version: "v1alpha1",
+                                        Kind:    "awsmktplwb",
+                                    },
+                                    ShortNames: []string{"awsmktplwb"},
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
+
+        err := json.NewEncoder(w).Encode(response)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+        }
+    }))
+
+    scheme := runtime.NewScheme()
+    _ = serializer.NewCodecFactory(scheme) // if you need this, else remove
+
+    suite.config = &rest.Config{
+        Host: suite.server.URL,
+    }
+
+    var err error
+    suite.client, err = clients.NewDiscoveryClient(suite.config, []string{"awsmktplwb"})
+    suite.Require().NoError(err)
+}
+
+func (suite *ClientTestSuite) TearDownSuite() {
+    suite.server.Close()
+}
+
+// TestDiscoverResources tests DiscoverResources caching and server hits
+func (suite *ClientTestSuite) TestDiscoverResources() {
+    suite.requestCount = 0 // reset counter
+
+    ctx := context.Background()
+
+    discoveryList, err := suite.client.DiscoverResources(ctx)
+    suite.Require().NoError(err)
+    suite.Require().NotNil(discoveryList)
+
+    suite.T().Logf("Request count after first call: %d", suite.requestCount)
+    if suite.requestCount == 1 {
+        suite.T().Log("Cache MISS - response fetched from server")
+    } else {
+        suite.T().Log("Unexpected request count on first call")
+    }
+
+    discoveryList2, err := suite.client.DiscoverResources(ctx)
+    suite.Require().NoError(err)
+    suite.Require().NotNil(discoveryList2)
+
+    suite.T().Logf("Request count after second call: %d", suite.requestCount)
+    if suite.requestCount == 1 {
+        suite.T().Log("Cache HIT - response served from cache, no additional server hit")
+    } else {
+        suite.T().Log("Cache MISS - server was hit again")
+    }
+
+    suite.Equal("awsmktplwb", discoveryList.Items[0].Versions[0].Resources[0].ShortNames[0])
+}
+
+// You can add other tests below in the same suite...
+
+func (suite *ClientTestSuite) TestOtherFunctionality() {
+    // Example placeholder for other tests
+    suite.T().Log("Running other tests...")
+    suite.True(true)
+}
+
+func TestClientTestSuite(t *testing.T) {
+    suite.Run(t, new(ClientTestSuite))
+}
