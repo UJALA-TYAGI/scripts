@@ -186,3 +186,13 @@ const SurveyUI = () => {
 };
 
 export default SurveyUI;
+
+tailwincss
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+
