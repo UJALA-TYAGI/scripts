@@ -196,3 +196,126 @@ module.exports = {
   plugins: [],
 };
 
+
+
+
+useEffect(() => {
+  axios
+    .get("http://localhost:5000/expose_data")
+    .then((res) => {
+      const rawData = res.data.data;
+
+      const parsedQuestions = rawData.map((q) => {
+        let options = [];
+
+        try {
+          if (q.options) {
+            // Replace single quotes with double and parse
+            options = JSON.parse(q.options.replace(/'/g, '"'));
+          }
+        } catch (err) {
+          console.warn("Failed to parse options for question:", q.id);
+        }
+
+        return {
+          ...q,
+          id: q.id || Math.random(),
+          type: q.type?.trim(),
+          options,
+          scale_min: isNaN(q.scale_min) ? null : q.scale_min,
+          scale_max: isNaN(q.scale_max) ? null : q.scale_max,
+        };
+      });
+
+      setSurveyName("Event Feedback Survey");
+      setQuestions(parsedQuestions);
+    })
+    .catch((err) => {
+      console.error("Error fetching survey:", err);
+      setSurveyName(mockSurvey.surveyName);
+      setQuestions(mockSurvey.questions);
+      setError(true);
+    })
+    .finally(() => setLoading(false));
+}, []);
+
+
+
+import React from "react";
+
+const SurveyForm = ({ surveyName, questions, onChange, onSubmit, error }) => {
+  return (
+    <form onSubmit={onSubmit} className="max-w-3xl mx-auto p-6 bg-white shadow rounded">
+      <h1 className="text-2xl font-bold mb-6 text-center">{surveyName}</h1>
+
+      {questions.map((q) => (
+        <div key={q.id} className="mb-6">
+          <label className="block text-lg font-medium mb-2">{q.question}</label>
+
+          {q.type === "single_choice" &&
+            q.options?.map((opt, idx) => (
+              <label key={idx} className="flex items-center mb-1">
+                <input
+                  type="radio"
+                  name={`q${q.id}`}
+                  value={opt}
+                  onChange={(e) => onChange(q.id, e.target.value)}
+                  className="accent-blue-500"
+                />
+                <span className="ml-2">{opt}</span>
+              </label>
+            ))}
+
+          {q.type === "multiple_choice" &&
+            q.options?.map((opt, idx) => (
+              <label key={idx} className="flex items-center mb-1">
+                <input
+                  type="checkbox"
+                  value={opt}
+                  onChange={(e) =>
+                    onChange(q.id, (prev = []) =>
+                      e.target.checked ? [...prev, opt] : prev.filter((o) => o !== opt)
+                    )
+                  }
+                  className="accent-green-500"
+                />
+                <span className="ml-2">{opt}</span>
+              </label>
+            ))}
+
+          {q.type === "text" && (
+            <textarea
+              rows={3}
+              className="w-full p-2 border rounded"
+              onChange={(e) => onChange(q.id, e.target.value)}
+            />
+          )}
+
+          {q.type === "scale" && q.scale_min != null && q.scale_max != null && (
+            <div className="flex items-center space-x-4">
+              <span>{q.scale_min}</span>
+              <input
+                type="range"
+                min={q.scale_min}
+                max={q.scale_max}
+                onChange={(e) => onChange(q.id, Number(e.target.value))}
+                className="w-full"
+              />
+              <span>{q.scale_max}</span>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+      >
+        Submit
+      </button>
+    </form>
+  );
+};
+
+export default SurveyForm;
+
