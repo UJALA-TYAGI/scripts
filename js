@@ -319,3 +319,53 @@ const SurveyForm = ({ surveyName, questions, onChange, onSubmit, error }) => {
 
 export default SurveyForm;
 
+
+
+from punetacone import jsonify, APIBlueprint as Blueprint, Tag
+import pandas as pd
+import os
+import numpy as np
+from . import logger  # Make sure logger is defined or imported
+
+app = Blueprint("app", __name__)
+api_tag = Tag(name="Pyneta Base", description="Welcome API for users.")
+
+@app.post("/expose_data", summary="Expose Data", tags=[api_tag])
+def expose_data():
+    """
+    Expose Data Endpoint - POST Request
+    Reads from data.xlsx and returns structured survey data
+    """
+    excel_path = os.path.join(os.path.dirname(__file__), "data.xlsx")
+    if not os.path.exists(excel_path):
+        return jsonify({"status": "error", "message": "data.xlsx not found"}), 404
+
+    df = pd.read_excel(excel_path)
+
+    # Define the clean function here
+    def clean(row):
+        options = []
+        if pd.notna(row.get("options")):
+            try:
+                # Convert string to list (e.g., "['A', 'B']" → ['A', 'B'])
+                options = eval(row["options"]) if isinstance(row["options"], str) else row["options"]
+            except Exception as e:
+                logger.warning(f"Could not parse options: {e}")
+                options = []
+
+        return {
+            "id": int(row["id"]),
+            "question": row["question"],
+            "type": row["type"].strip().lower(),
+            "options": options,
+            "scale_min": int(row["scale_min"]) if not pd.isna(row["scale_min"]) else None,
+            "scale_max": int(row["scale_max"]) if not pd.isna(row["scale_max"]) else None,
+        }
+
+    # Apply cleaning
+    cleaned_data = [clean(row) for _, row in df.iterrows()]
+
+    logger.info(f"Returning cleaned survey data with {len(cleaned_data)} questions.")
+    return jsonify({"status": "success", "data": cleaned_data})
+
+
