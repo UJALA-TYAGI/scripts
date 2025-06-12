@@ -334,3 +334,138 @@ const BaseLayout = ({ children }) => {
 export default BaseLayout
 
 
+
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}", // ensure all JSX files are scanned
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+
+
+
+
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+
+
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+import AdminPortal from "./components/AdminPortal";
+import EventForm from "./components/EventForm";
+import ViewForm from "./components/ViewForm";
+import BaseLayout from "./components/BaseLayout";
+
+function App() {
+  const [forms, setForms] = useState([
+    {
+      id: "1",
+      userName: "John Doe",
+      userId: "R720133",
+      eventName: "Tech Conference 2025",
+      location: "London",
+      date: "2025-09-01",
+      participants: ["P1", "P2"],
+      objectives: "Discuss advancements in AI",
+      description: "Agenda details here",
+      status: "open",
+    },
+    {
+      id: "2",
+      userName: "Jane Smith",
+      userId: "R720134",
+      eventName: "Marketing Summit",
+      location: "New York",
+      date: "2025-10-10",
+      participants: ["P3", "P4"],
+      objectives: "Marketing strategies",
+      description: "Details here",
+      status: "closed",
+    },
+  ]);
+
+  const submitForm = (formData) => {
+    setForms((prev) => {
+      const exists = prev.find((f) => f.id === formData.id);
+      if (exists) {
+        return prev.map((f) => (f.id === formData.id ? formData : f));
+      }
+      return [...prev, formData];
+    });
+  };
+
+  const duplicateForm = (id) => {
+    const formToDuplicate = forms.find((form) => form.id === id);
+    if (formToDuplicate) {
+      const newForm = { ...formToDuplicate, id: Date.now().toString() };
+      setForms((prev) => [...prev, newForm]);
+    }
+  };
+
+  const deleteForm = (id) => {
+    setForms((prev) => prev.filter((form) => form.id !== id));
+  };
+
+  return (
+    <Router>
+      <Routes>
+        <Route
+          path="/admin"
+          element={
+            <BaseLayout>
+              <AdminPortal
+                forms={forms}
+                duplicateForm={duplicateForm}
+                deleteForm={deleteForm}
+              />
+            </BaseLayout>
+          }
+        />
+        <Route
+          path="/new"
+          element={
+            <BaseLayout>
+              <EventForm submitForm={submitForm} />
+            </BaseLayout>
+          }
+        />
+        <Route
+          path="/edit/:id"
+          element={
+            <BaseLayout>
+              <EventForm forms={forms} submitForm={submitForm} />
+            </BaseLayout>
+          }
+        />
+        <Route
+          path="/view/:id"
+          element={
+            <BaseLayout>
+              <ViewForm forms={forms} />
+            </BaseLayout>
+          }
+        />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
