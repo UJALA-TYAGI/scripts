@@ -367,4 +367,311 @@ body {
       width: 100%;
     }
   }
+
+
+
+___________________________________
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
   
+  .admin-portal-container {
+    max-width: 1280px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+  }
+  
+  .dashboard-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2.2rem;
+    color: #262750;
+    margin-bottom: 0.5rem;
+  }
+  
+  .dashboard-header p {
+    font-size: 1rem;
+    color: #6c757d;
+  }
+  
+  /* Section containers */
+  .open-forms-container,
+  .closed-forms-container {
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .open-forms-container {
+    background-color: #ffffff;
+    box-shadow: 0 6px 20px rgba(0, 104, 201, 0.05);
+  }
+  
+  .closed-forms-container {
+    background-color: #f5f5f5;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  }
+  
+  /* Card Row */
+  .card-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  
+  /* Form Card */
+  .form-card {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    width: calc(33.333% - 1rem);
+    position: relative;
+    transition: box-shadow 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .form-card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-card.closed {
+    background-color: #f0f2f5;
+    color: #555;
+    box-shadow: none;
+    border: 1px solid #ddd;
+    justify-content: center;
+  }
+  
+  /* For closed forms, center the form name */
+  .form-card.closed h3 {
+    color: #888;
+    margin: 0;
+  }
+  
+  /* Card Header */
+  .form-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .form-card-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #262750;
+    flex-grow: 1;
+  }
+  
+  /* Dropdown */
+  .form-options {
+    position: relative;
+    margin-left: 1rem;
+  }
+  
+  .dots {
+    cursor: pointer;
+    font-size: 1.5rem;
+    user-select: none;
+  }
+  
+  .dropdown {
+    position: absolute;
+    top: 24px;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+    flex-direction: column;
+    z-index: 10;
+  }
+  
+  .form-options:hover .dropdown {
+    display: flex;
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .icon-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .action-icon {
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #555;
+    transition: color 0.2s ease;
+  }
+  
+  .action-icon:hover {
+    color: #262750;
+  }
+  
+  
+  /* Section Title */
+  .section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .add-event-btn {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background-color: #262750;
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+  }
+  
+  .add-event-btn:hover {
+    background-color: #3b3c84;
+  }
+
+  
+  .dashboard-header {
+    position: relative;
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  
+
+  /* Responsive */
+  @media (max-width: 992px) {
+    .form-card {
+      width: calc(50% - 1rem);
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .form-card {
+      width: 100%;
+    }
+  }
+
+
+_______
+
+import React from "react";
+import "./AdminPortal.css";
+import { FaEdit, FaCopy, FaTrash, FaEye, FaPlus } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+
+const AdminPortal = ({ forms, duplicateForm, deleteForm }) => {
+  const navigate = useNavigate();
+
+  const handleEdit = (id) => {
+    navigate(`/edit/${id}`);
+  };
+
+  const handleNewEvent = () => {
+    navigate("/new");
+  };
+
+  return (
+    <div className="admin-portal-container">
+      <div className="dashboard-header">
+        <h1>Hi, Welcome to your Dashboard</h1>
+        <p>Manage your event forms here</p>
+      </div>
+
+      <div className="open-forms-container">
+        <div className="section-header">
+          <h2 className="section-title">Open Forms</h2>
+          <button className="add-event-btn" onClick={handleNewEvent}>
+            <FaPlus className="plus-icon" />
+            Add New Event
+          </button>
+        </div>
+        <div className="card-row">
+          {forms
+            .filter((form) => form.status === "open")
+            .map((form) => (
+              <div key={form.id} className="form-card">
+                <div className="form-card-header">
+                  <h3>{form.eventName}</h3>
+                  <div className="icon-buttons">
+                    <FaEdit
+                      className="action-icon"
+                      title="Edit"
+                      onClick={() => handleEdit(form.id)}
+                    />
+                    <FaCopy
+                      className="action-icon"
+                      title="Duplicate"
+                      onClick={() => duplicateForm(form.id)}
+                    />
+                    <FaTrash
+                      className="action-icon"
+                      title="Delete"
+                      onClick={() => deleteForm(form.id)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      <div className="closed-forms-container">
+        <h2 className="section-title">Closed Forms</h2>
+        <div className="card-row">
+          {forms
+            .filter((form) => form.status === "closed")
+            .map((form) => (
+              <div key={form.id} className="form-card closed">
+                <div className="form-card-header">
+                  <h3>{form.eventName}</h3>
+                  <div className="icon-buttons">
+                    <FaEye
+                      className="action-icon"
+                      title="View"
+                      onClick={() => navigate(`/view/${form.id}`)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminPortal;
+
