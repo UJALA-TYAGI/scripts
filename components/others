@@ -162,3 +162,162 @@ overflow: hidden;
   --streamLit-primary: #ff4b4b;
   --streamlit-secondary: #0068c9;
 }
+
+
+
+_________________________
+
+.App {
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'; 
+}
+
+
+.streamlit-container{
+width: 100%;
+margin: 0;
+padding: 0;
+background-color: #f0f2f5;
+min-height: 100vh; 
+display: flex;
+flex-direction: column;
+}
+
+.streamlit-header {
+  padding: 0.5rem; 
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,1);
+  z-index: 10;
+}
+
+.streamlit-header h1{
+  font-weight: 600; 
+  font-size: 1.5rem; 
+  color: #262750;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+.streamlit-content {
+flex: 1;
+display: flex;
+background-color: transparent;
+padding: 0;
+width: 100%; 
+max-width: 100%;
+margin: 0 auto;
+overflow: hidden;
+}
+
+:root {
+  --streamLit-primary: #ff4b4b;
+  --streamlit-secondary: #0068c9;
+}
+
+
+
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+import AdminPortal from "./AdminPortal";
+import EventForm from "./EventForm";
+import ViewForm from "./ViewForm";
+
+function App() {
+  const [forms, setForms] = useState([
+    {
+      id: "1",
+      userName: "John Doe",
+      userId: "R720133",
+      eventName: "Tech Conference 2025",
+      location: "London",
+      date: "2025-09-01",
+      participants: ["P1", "P2"],
+      objectives: "Discuss advancements in AI",
+      description: "Agenda details here",
+      status: "open",
+    },
+    {
+      id: "2",
+      userName: "Jane Smith",
+      userId: "R720134",
+      eventName: "Marketing Summit",
+      location: "New York",
+      date: "2025-10-10",
+      participants: ["P3", "P4"],
+      objectives: "Marketing strategies",
+      description: "Details here",
+      status: "closed",
+    },
+  ]);
+
+  // Update existing form by id
+  const updateForm = (updatedForm) => {
+    setForms((prev) =>
+      prev.map((form) =>
+        form.id === updatedForm.id ? updatedForm : form
+      )
+    );
+  };
+
+  const submitForm = (formData) => {
+    setForms((prev) => {
+      const exists = prev.find((f) => f.id === formData.id);
+      if (exists) {
+        return prev.map((f) =>
+          f.id === formData.id ? { ...formData } : f
+        );
+      } else {
+        return [...prev, { ...formData, id: Date.now().toString() }];
+      }
+    });
+  };
+
+  // Duplicate form by id
+  const duplicateForm = (id) => {
+    const formToDuplicate = forms.find((form) => form.id === id);
+    if (formToDuplicate) {
+      const newForm = { ...formToDuplicate, id: Date.now().toString() };
+      setForms((prev) => [...prev, newForm]);
+    }
+  };
+
+  // Delete form by id
+  const deleteForm = (id) => {
+    setForms((prev) => prev.filter((form) => form.id !== id));
+  };
+
+  return (
+    <Router>
+      <Routes>
+        <Route
+          path="/admin"
+          element={
+            <AdminPortal
+              forms={forms}
+              duplicateForm={duplicateForm}
+              deleteForm={deleteForm}
+            />
+          }
+        />
+        <Route
+          path="/new"
+          element={<EventForm submitForm={submitForm} />}
+        />
+        <Route
+          path="/edit/:id"
+          element={
+            <EventForm
+              forms={forms}
+              submitForm={submitForm}
+            />
+          }
+        />
+        <Route path="/view/:id" element={<ViewForm forms={forms} />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+
