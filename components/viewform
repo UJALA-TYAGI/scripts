@@ -1,0 +1,197 @@
+// ViewForm.jsx
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import "./ViewForm.css";
+
+const ViewForm = ({ forms }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const form = forms.find((f) => f.id === id);
+
+  if (!form) return <div className="form-header"><h1 className="header-align">Form Not Found</h1></div>;
+
+  return (
+    <div className="form-header">
+      <h1 className="header-align">View Event</h1>
+      <p className="subheading">This is a read-only view of the submitted form.</p>
+      <div className="event-form-wrapper">
+        <form className="event-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label>User Name</label>
+              <input type="text" value={form.userName} disabled />
+            </div>
+            <div className="form-group">
+              <label>User ID</label>
+              <input type="text" value={form.userId} disabled />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Event Name</label>
+              <input type="text" value={form.eventName} disabled />
+            </div>
+            <div className="form-group">
+              <label>Location</label>
+              <input type="text" value={form.location} disabled />
+            </div>
+            <div className="form-group date-group">
+              <label>Date</label>
+              <input type="date" value={form.date} disabled />
+            </div>
+          </div>
+
+          <div className="form-row participants-row">
+            <div className="form-group full-width">
+              <label className="participants-label">Participants</label>
+              {form.participants.map((p, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={p}
+                  disabled
+                  className="participant-input"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group full-width">
+              <label>Objectives</label>
+              <textarea rows="3" value={form.objectives} disabled />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group full-width">
+              <label>Description</label>
+              <textarea rows="4" value={form.description} disabled />
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button type="dashboard" onClick={() => navigate("/admin")}>
+              Back to Dashboard
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default ViewForm;
+
+
+.view-form-header {
+    background-color: #262750;
+    color: white;
+    padding: 2rem 1rem;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+  }
+  
+  .view-form-wrapper {
+    max-width: 900px;
+    margin: 2rem auto;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 104, 201, 0.05);
+    padding: 2rem;
+  }
+  
+  .view-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .view-form-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .view-form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .view-form-group.full-width {
+    flex: 100%;
+  }
+  
+  .view-form-group label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+  }
+  
+  .view-form-group input,
+  .view-form-group textarea {
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #f9f9f9;
+  }
+  
+  .view-form-group textarea {
+    resize: vertical;
+  }
+  
+  .view-form-group input[disabled],
+  .view-form-group textarea[disabled] {
+    color: #555;
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+  
+  .view-form-actions {
+    text-align: right;
+    margin-top: 2rem;
+  }
+  
+  .view-form-actions button {
+    padding: 0.6rem 1.2rem;
+    background-color: #262750;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background-color 0.3s ease;
+  }
+  
+  .view-form-actions button:hover {
+    background-color: #3a3b6b;
+  }
+
+  button[type="dashboard"] {
+    padding: 1rem 3rem;
+    background-color: #10a37f;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  
+  button[type="dashboard"]:hover {
+    background-color: #0e8f6e;
+    transform: scale(1.03);
+  }
+  
+  @media (max-width: 768px) {
+    .view-form-row {
+      flex-direction: column;
+    }
+  }
+  
