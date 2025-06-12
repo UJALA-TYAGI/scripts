@@ -675,3 +675,141 @@ const AdminPortal = ({ forms, duplicateForm, deleteForm }) => {
 
 export default AdminPortal;
 
+#################################
+
+import React from "react";
+import { Link } from "react-router-dom";
+import { FiEdit, FiTrash2, FiCopy, FiEye, FiBarChart2 } from "react-icons/fi";
+
+const AdminPortal = ({ forms, duplicateForm, deleteForm }) => {
+  const openForms = forms.filter((f) => f.status === "open");
+  const closedForms = forms.filter((f) => f.status === "closed");
+
+  return (
+    <div className="max-w-7xl mx-auto p-6 space-y-12">
+      {/* Header with title + submit button */}
+      <header className="flex items-center justify-between mb-10">
+        <h1 className="text-4xl font-extrabold text-gray-900">Event Feedback Portal</h1>
+        <Link
+          to="/new"
+          className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-semibold shadow-md transition"
+        >
+          Submit New Form
+        </Link>
+      </header>
+
+      {/* OPEN FORMS */}
+      <section>
+        <h2 className="text-3xl font-bold text-gray-900 mb-6 border-b border-gray-300 pb-2">
+          Open Forms
+        </h2>
+        {openForms.length === 0 ? (
+          <p className="text-gray-500">No open forms available.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {openForms.map((form) => (
+              <div
+                key={form.id}
+                className="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between hover:shadow-xl transition-shadow duration-300"
+              >
+                <div>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                    {form.eventName}
+                  </h3>
+                  <p className="text-gray-700 mb-1">
+                    <span className="font-semibold">Organizer:</span> {form.userName}
+                  </p>
+                  <p className="text-gray-700 mb-1">
+                    <span className="font-semibold">Location:</span> {form.location}
+                  </p>
+                  <p className="text-gray-700 mb-1">
+                    <span className="font-semibold">Date:</span>{" "}
+                    {new Date(form.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="mt-6 flex space-x-6 justify-end text-indigo-600">
+                  <Link
+                    to={`/edit/${form.id}`}
+                    title="Edit"
+                    className="hover:text-indigo-800"
+                  >
+                    <FiEdit size={24} />
+                  </Link>
+                  <button
+                    onClick={() => deleteForm(form.id)}
+                    title="Delete"
+                    className="hover:text-red-600"
+                  >
+                    <FiTrash2 size={24} />
+                  </button>
+                  <button
+                    onClick={() => duplicateForm(form.id)}
+                    title="Duplicate"
+                    className="hover:text-green-600"
+                  >
+                    <FiCopy size={24} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* CLOSED FORMS */}
+      <section>
+        <h2 className="text-3xl font-bold text-gray-900 mb-6 border-b border-gray-300 pb-2">
+          Closed Forms
+        </h2>
+        {closedForms.length === 0 ? (
+          <p className="text-gray-500">No closed forms available.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {closedForms.map((form) => (
+              <div
+                key={form.id}
+                className="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between hover:shadow-xl transition-shadow duration-300"
+              >
+                <div>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                    {form.eventName}
+                  </h3>
+                  <p className="text-gray-700 mb-1">
+                    <span className="font-semibold">Organizer:</span> {form.userName}
+                  </p>
+                  <p className="text-gray-700 mb-1">
+                    <span className="font-semibold">Location:</span> {form.location}
+                  </p>
+                  <p className="text-gray-700 mb-1">
+                    <span className="font-semibold">Date:</span>{" "}
+                    {new Date(form.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="mt-6 flex space-x-6 justify-end text-gray-700 hover:text-gray-900">
+                  <Link
+                    to={`/view/${form.id}`}
+                    title="View"
+                    className="hover:text-indigo-800"
+                  >
+                    <FiEye size={24} />
+                  </Link>
+                  <button
+                    title="Analyze"
+                    className="hover:text-indigo-800"
+                    onClick={() => alert(`Analyze action for form id: ${form.id}`)}
+                  >
+                    <FiBarChart2 size={24} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
+
+export default AdminPortal;
+
+
