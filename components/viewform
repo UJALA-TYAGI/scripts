@@ -194,4 +194,151 @@ export default ViewForm;
       flex-direction: column;
     }
   }
-  
+
+
+################################
+
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import BaseLayout from "./BaseLayout";
+
+const ViewForm = ({ forms }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const form = forms.find((f) => f.id === id);
+
+  if (!form) {
+    return (
+      <BaseLayout>
+        <div className="max-w-4xl mx-auto px-6 py-8 bg-white shadow-lg rounded-xl">
+          <h2 className="text-2xl font-bold mb-4">Form not found.</h2>
+          <button
+            className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md"
+            onClick={() => navigate("/admin")}
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </BaseLayout>
+    );
+  }
+
+  return (
+    <BaseLayout>
+      <div className="max-w-4xl mx-auto px-6 py-8 bg-white shadow-lg rounded-xl">
+        <div className="border-b pb-4 mb-6">
+          <h2 className="text-4xl font-extrabold text-gray-900">View Event</h2>
+          <p className="text-gray-500 mt-2">
+            Here is the information for this event.
+          </p>
+        </div>
+
+        <form className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block mb-1 font-semibold text-gray-700">User Name</label>
+              <input
+                type="text"
+                readOnly
+                value={form.userName}
+                className="border border-gray-300 rounded-md p-3 w-full bg-gray-100 text-gray-700 cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-semibold text-gray-700">User ID</label>
+              <input
+                type="text"
+                readOnly
+                value={form.userId}
+                className="border border-gray-300 rounded-md p-3 w-full bg-gray-100 text-gray-700 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block mb-1 font-semibold text-gray-700">Location</label>
+              <input
+                type="text"
+                readOnly
+                value={form.location}
+                className="border border-gray-300 rounded-md p-3 w-full bg-gray-100 text-gray-700 cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-semibold text-gray-700">Event Name</label>
+              <input
+                type="text"
+                readOnly
+                value={form.eventName}
+                className="border border-gray-300 rounded-md p-3 w-full bg-gray-100 text-gray-700 cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block mb-1 font-semibold text-gray-700">Date</label>
+            <input
+              type="text"
+              readOnly
+              value={form.date}
+              className="border border-gray-300 rounded-md p-3 w-44 bg-gray-100 text-gray-700 cursor-not-allowed"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 font-semibold text-gray-700">Participants</label>
+            <div className="flex flex-wrap gap-2">
+              {form.participants && form.participants.length > 0 ? (
+                form.participants.map((p, idx) => (
+                  <input
+                    key={idx}
+                    type="text"
+                    readOnly
+                    value={p}
+                    className="border border-gray-300 rounded-md p-3 w-36 bg-gray-100 text-gray-700 cursor-not-allowed"
+                  />
+                ))
+              ) : (
+                <p className="text-gray-500">No participants added.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block mb-1 font-semibold text-gray-700">Objectives</label>
+            <textarea
+              readOnly
+              value={form.objectives}
+              rows={3}
+              className="border border-gray-300 rounded-md p-3 w-full bg-gray-100 text-gray-700 cursor-not-allowed resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 font-semibold text-gray-700">Description</label>
+            <textarea
+              readOnly
+              value={form.description}
+              rows={4}
+              className="border border-gray-300 rounded-md p-3 w-full bg-gray-100 text-gray-700 cursor-not-allowed resize-none"
+            />
+          </div>
+
+          <div className="pt-4">
+            <button
+              type="button"
+              onClick={() => navigate("/admin")}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-semibold shadow-sm"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </form>
+      </div>
+    </BaseLayout>
+  );
+};
+
+export default ViewForm;
+
