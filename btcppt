@@ -1,0 +1,52 @@
+[Slide 1: Why We’re Here] Hi everyone, and thank you for joining.
+We’re here to take you through something we’ve built during the hackathon as part of Innovation Week. The core idea came from a very simple thought — we talk a lot about feedback and listening, but how do we make that process smarter, scalable, and genuinely impactful?
+
+[Slide 2: Meet the Team]
+ Before I jump in — we’re Flamingos on Trampoline, a team of SEP analysts from across Infrastructure Platforms. Interestingly, we hadn’t worked together before this event. Coming from different LOBs, different day-to-day roles, we brought varied perspectives and skillsets — which ended up being one of the biggest strengths of this project.
+
+
+[Slide 3: "Complete the Survey Today"] Let me start with something familiar.
+We've all received surveys — after an event, a training, maybe a new product launch. And let’s be honest, at some point, most of us have either skipped it or filled it out half-heartedly.
+The reasons? Static questions. One-size-fits-all templates. Sometimes the questions aren’t even relevant. And the bigger problem — we don’t really know what happens to that feedback.
+Traditional survey methods just don’t reflect how dynamic our workplace is today.
+
+
+[Slide 4: Listening Strategy]
+ That’s where the Listening Strategy comes in — a structured approach built by the CTO COS, Tech Center Leadership, and volunteers. The idea is to gather feedback in a way that’s meaningful — not just collecting data, but identifying cultural gaps, aligning with strategy, and capturing diverse perspectives to drive continuous improvement.
+Each Listening Strategy involves roles like Tech Center Managers, UX Researchers, Data Analysts, and volunteers. But getting people to show up for conversations, organizing sessions, and manually analyzing data — it’s a lot.
+And that’s where we saw an opportunity.
+
+
+[Slide 5: Introducing Flamingo]
+ We built Flamingo — an AI-powered agent to support and scale the Listening Strategy.
+Flamingo can initiate feedback conversations, schedule sessions, tailor questions based on context, and even generate insights — all while ensuring compliance and maintaining the spirit of a two-way dialogue.
+
+
+[Slide 6: Key Capabilities (Talk through highlights only)] Just to touch on a few features:
+* Admin dashboard for initiating and managing conversations - This is where everything starts, here they can define the audience, and set the tone.
+* Flamingo AI Agent- At the heart of it is the AI agent — built on GPT-4o — that interacts in a human-like, empathetic way. It doesn’t feel like a form — it feels like a conversation.
+* After each interaction, Flamingo provides summaries, key takeaways, and action items. So instead of just raw data, stakeholders get decision-ready insights.
+* Custom templates and persona-based question flows, Device-agnostic, and built to scale across use cases - Whether it's about an event, a product release, or a recurring process — Flamingo adapts its questions to context and user role. Townhalls, product launches, internal tools — admins can pick or build templates that fit. No need to start from scratch.
+* Scalable & Integrated with other products like swipe, digital assiatant and other  And we’ve already seen traction — (point of you)PoY and the JPMC Feedback Portal teams reached out to us for potential collaboration. 
+What we’ve built isn’t a survey tool — it’s a listening platform.
+
+
+ You’ll walk through this, but just to say — this is not a prototype on slides. What you’ll see is what we built — in two days — with real conversations, real data handling, and real insight generation.
+
+[Slide 9: What’s Next] Looking ahead, we’re exploring:
+* We’re working on building evaluations into the system — so the agent can analyze sentiment, flag risks, and learn over time.
+* Persona identification is another key area — say for something like a Townhall, instead of reaching out to everyone, Flamingo could intelligently identify and engage only the most relevant audience.
+* Audio interaction -this is yet to be decided -  allowing the agent to have a voice-based conversation with the user persona instead of relying on text. 
+* We’re also exploring ways to recognize and appreciate employees who consistently participate in feedback conversations.
+* Through potential integration with the go/appreciate , we could send a thank-you eCard to those who share insights — turning feedback into a two-way exchange. - this is again to be decided
+* 
+All of this is in motion — I would say in these 2 days The foundation is in place — what’s exciting now is how far we can scale this, and how deeply it can integrate across our existing ecosystem.
+
+As I have mentioned already - Flamingo isn’t tied to one product or function. It’s agnostic — both technically and from a business lens. Anywhere feedback matters — it can plug in.
+
+We’ve had great support from Tech Center managers while building this. That, for us, was an early validation that this isn’t just an Innovation Week project — it has practical potential.
+
+
+[Final Slide: Closing Ask (Subtle Ask)] For us, this experience has been incredibly rewarding. We stepped away from our regular BAU work, picked up new skills — from ReactJS to PyNeta and prompt engineering — and collaborated across functions.
+We’d love to hear your thoughts on where Flamingo could be valuable. Whether it’s a product, a service, or a process — if there’s a space where listening better could make things better, we’d be excited to explore that.
+Thank you again for your time — and we’re happy to take any feedback.
