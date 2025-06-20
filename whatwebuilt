@@ -1,0 +1,44 @@
+[Opening – Greeting & Gratitude]**
+Hi everyone — thanks so much for taking the time to join today’s discussion.
+We’re really excited to be here and explore how we might be able to integrate what we’ve built with the work your team is doing.
+
+---
+
+**\[What We Built – Short Context]**
+Just to quickly set the context — during Innovation Week, we built a solution called **Flamingo**.
+It’s an AI-powered platform designed to make our **Listening Strategy** smarter, scalable, and easier to execute.
+
+The idea came from a simple challenge we’ve all seen — feedback collection tends to be manual, repetitive, and often limited in how much insight it can actually surface.
+So, we asked: *What if gathering feedback felt more like a conversation — and less like a form?*
+
+Flamingo does exactly that — it’s a conversational AI agent that interacts with users, tailors its questions based on context, and generates actionable insights — all while being lightweight, customizable, and built to scale across products and teams.
+
+---
+
+**\[Why We Built It – Problem Framing]**
+The current Listening Strategy is powerful — but running it requires a lot of time, people, and coordination: scheduling sessions, recruiting volunteers, manually analyzing feedback, and so on.
+
+We wanted to build something that could support this effort — not replace the human touch, but **augment it** using AI.
+
+In just two days, we delivered a working solution with real interactions, summaries, and a modular design that’s both **LOB-agnostic** and **tech-ready**.
+
+---
+
+**\[Why This Meeting – Integration Ask]**
+The reason we’re here today is that we believe there’s strong potential for **Flamingo to integrate with your product** — whether it’s to enhance feedback loops, improve user engagement, or gather insight post-launch or post-interaction.
+
+We’re not thinking of this as a standalone tool — our goal is to embed this kind of listening intelligence wherever it’s needed, and make it seamless within existing systems.
+
+We’d love to walk you through what Flamingo can do, and more importantly, understand your product goals — so we can identify if and how this integration could bring value to your users and roadmap.
+
+---
+
+**\[Smooth Transition to Demo or Conversation]**
+I’ll take just a few minutes to show you what Flamingo looks like in action — and then we’d love to open it up for your thoughts, ideas, or even challenges you face where a tool like this might fit in.
+
+Let’s dive in.
+
+__________________
+
+The Listening Strategy is an initiative driven by the CTO COS, Tech Center Leadership, and research volunteers.
+Its goal is to create a structured, intentional way of gathering feedback — not just through generic surveys, but through meaningful, data-driven conversations with employees and partners.
