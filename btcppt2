@@ -1,0 +1,112 @@
+
+Absolutely — here’s a **fresh, rephrased version** of your **demo script**, keeping your core content, structure, and message intact, but **rewritten entirely** so it sounds **new, more natural, and unscripted** for today’s presentation.
+
+It still sounds professional, but with a **slightly more conversational tone**, so it doesn’t feel memorized or copy-pasted — and it’ll land well with a leadership audience who may have seen your previous talk.
+
+---
+
+### 🔹 Refreshed Demo Speech for Today's Meeting
+
+---
+
+**\[Slide 1: Why We’re Here]**
+Hi everyone, thanks for making the time.
+We’re here to walk you through something we’ve been working on as part of the hackathon during Innovation Week.
+The idea we started with was pretty simple — we wanted to make the way we gather and use feedback smarter, faster, and more meaningful.
+
+---
+
+**\[Slide 2: Team Introduction]**
+We’re *Flamingos on Trampoline*, a team of SEP analysts from across IP.
+Interestingly, none of us had worked together before this — we’re from different lines of business, doing very different day-to-day work. But that mix really shaped the way we thought about the problem and the solution.
+We also stepped beyond our usual stacks and picked up new tech along the way — PyNeta, ReactJS, prompt engineering — and that made the journey even more fun and rewarding.
+
+---
+
+**\[Slide 3: “Complete the Survey Today”]**
+Let’s take a moment to talk about something we’ve all seen before — the follow-up survey.
+
+After every event, session, or release, we’re sent a form — usually with fixed questions, dropdowns, and maybe a text box.
+More often than not, we either skip it, fill it out in a hurry, or wonder whether the input we give actually goes anywhere.
+
+That’s not because feedback isn’t important — it’s because the tools we use to collect it haven’t kept up with how we work today.
+
+---
+
+**\[Slide 4: Listening Strategy]**
+Within the firm, there’s already a strong foundation for thoughtful feedback — and that’s the **Listening Strategy**.
+
+It was designed by the CTO COS, Tech Center leadership, and volunteers to bring structure and depth to feedback — aligning it to strategy, identifying culture gaps, and driving actual change.
+
+But running a listening round — from scheduling to analysis — is time-intensive. It relies on volunteers and a lot of manual effort.
+That’s where we saw an opportunity to simplify and scale.
+
+---
+
+**\[Slide 5: Enter Flamingo]**
+We built **Flamingo**, an AI-powered assistant that helps teams execute the Listening Strategy at scale — while keeping the human side of feedback intact.
+
+It can initiate conversations, guide users through relevant questions, and generate summaries and insights — all while respecting privacy, context, and intent.
+
+---
+
+**\[Slide 6: Highlights – Key Capabilities]**
+A few highlights:
+
+* There’s an **admin dashboard** that makes it easy to launch and manage listening sessions — define your audience, set objectives, and track progress.
+
+* The core of it is the **Flamingo Agent** — built on GPT-4o — which makes the experience feel like a dialogue, not a form. It listens, responds, and adjusts based on the user.
+
+* The **insight engine** is where the value really comes in — it delivers takeaways, action items, and themes, not just raw data.
+
+* You can also **customize flows** based on use case — townhalls, product feedback, internal tool launches — and define how Flamingo sounds, who it talks to, and what it focuses on.
+
+* It’s **device-agnostic** and **integration-ready** — built to connect with tools like Swipey, Digital Assistant, and more.
+
+And we’re excited to share that **PoY and the JPMC Feedback Portal team** reached out to us after seeing the project — they're exploring how this could support their work.
+
+---
+
+**\[Slide 7: What We Built]**
+You’ll walk through the product in a bit — but just to be clear, what you’ll see isn’t a concept deck.
+This is a working solution, built in 48 hours, with real data handling, real flows, and a functioning AI agent.
+
+---
+
+**\[Slide 8: What’s Next]**
+There’s a lot of potential ahead, and we’ve started exploring a few directions:
+
+* **Evaluations** — so Flamingo can assess sentiment, identify red flags, and evolve its recommendations over time.
+
+* **Persona targeting** — let’s say there’s a Townhall that’s only relevant to a specific function; Flamingo could ensure only that group is engaged, keeping feedback relevant and focused.
+
+* **Audio-based interaction** *(TBD)* — we’re also thinking about enabling voice conversations with the agent, to make it more accessible and conversational in the future.
+
+* **Recognition & appreciation** *(also under consideration)* — through a possible link with **go/appreciate**, we’d love to recognize employees who consistently share meaningful feedback by sending a simple eCard. It’s a small step toward building a culture of listening and response.
+
+All of this is still evolving — but what’s exciting is how much ground we’ve already covered in just two days.
+The foundation is there, and there’s so much more we can do.
+
+---
+
+**\[Slide 9: Final Thoughts]**
+The key thing is — Flamingo isn’t built for one use case.
+It’s **agnostic**, both in terms of technology and business application. Wherever there’s a need for honest feedback — product, platform, or service — Flamingo can plug in.
+
+We were fortunate to have the backing of **Tech Center managers** during development — which gave us the confidence that this idea isn’t just viable, but relevant.
+
+---
+
+**\[Closing Ask – Light & Open-Ended]**
+This experience has been incredibly fulfilling — not just because of what we built, but how we built it.
+
+We’d love to hear your thoughts on where Flamingo could be useful. If you think there’s a space in your team, product, or process where smarter listening could help — we’d be more than happy to explore that with you.
+
+Thanks again for your time — we’re looking forward to your feedback.
+
+---
+
+Let me know if you’d like:
+
+* a 1-minute quick version of this for a leadership roundtable
+* or a punchy one-liner to wrap it up confidently
