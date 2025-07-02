@@ -63,3 +63,51 @@ func createRequest(vars ScenarioConfig, endpoint string, method string) ([]*http
     return responses, nil
 }
 
+
+
+func createRequest(vars ScenarioConfig, endpoint string, method string) (*http.Request, error) {
+    raw := vars.Get(NamingEndpoint)
+
+    var endpoints []string
+    switch val := raw.(type) {
+    case []interface{}:
+        for _, ep := range val {
+            str, ok := ep.(string)
+            if ok {
+                endpoints = append(endpoints, str)
+            }
+        }
+    case string:
+        endpoints = []string{val}
+    default:
+        return nil, fmt.Errorf("expected naming-api-endpoint to be a string or list of strings")
+    }
+
+    for _, baseURL := range endpoints {
+        fullURL := baseURL + endpoint
+        body := bytes.NewBuffer(nil)
+
+        req, err := http.NewRequest(method, fullURL, body)
+        if err != nil {
+            continue // try next endpoint
+        }
+
+        token, _, err := ida.GetIdaAccessToken(
+            vars.Get(ClientId),
+            vars.Get(NamingResourceUri),
+            vars.Get(RedirectUrl),
+            vars.Get(IdaProviderProd),
+        )
+        if err != nil {
+            continue // try next endpoint
+        }
+
+        req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("Authorization", "Bearer "+token)
+
+        return req, nil // ✅ first successful request
+    }
+
+    return nil, fmt.Errorf("failed to create request for all configured naming-api-endpoints")
+}
+
