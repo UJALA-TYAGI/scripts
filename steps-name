@@ -26,3 +26,40 @@ func NamingSteps(ctx *common.AtlasScenarioContext, logging *scenario_logging.Sce
     RunNamingTestsAcrossEndpoints(ctx, logging)
 }
 baseURL := shared_state.GetSharedState(ctx).Get("activeNamingEndpoint").(string)
+
+
+
+func createRequest(vars ScenarioConfig, endpoint string, method string) ([]*http.Response, error) {
+    raw := vars.Get(NamingEndpoint) // NamingEndpoint is a const string elsewhere
+    urlsInterface, ok := raw.([]interface{})
+    if !ok {
+        return nil, fmt.Errorf("naming-api-endpoint is not a list")
+    }
+
+    var responses []*http.Response
+    for _, u := range urlsInterface {
+        baseURL, ok := u.(string)
+        if !ok {
+            return nil, fmt.Errorf("found non-string URL in naming-api-endpoint")
+        }
+
+        apiEndpoint := baseURL + endpoint
+        req, err := http.NewRequest(method, apiEndpoint, nil)
+        if err != nil {
+            return nil, err
+        }
+
+        // add headers, tokens if needed
+
+        client := &http.Client{}
+        resp, err := client.Do(req)
+        if err != nil {
+            return nil, err
+        }
+
+        responses = append(responses, resp)
+    }
+
+    return responses, nil
+}
+
