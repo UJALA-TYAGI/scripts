@@ -1,21 +1,28 @@
-func ExtractNamingEndpoints(rawConfig map[string]interface{}) ([]string, error) {
-    key := "naming-api-endpoint"
-    var endpoints []string
+func RunNamingTestsAcrossEndpoints(ctx *common.AtlasScenarioContext, logging *scenario_logging.ScenarioLogger) {
+    config := GetScenarioConfig(ctx)
+    raw := config.Get(scenario_vars.NamingEndpoint)
 
-    if vals, ok := rawConfig[key]; ok {
-        // It's either a []interface{} or []string depending on your loader
-        switch v := vals.(type) {
-        case []interface{}:
-            for _, url := range v {
-                endpoints = append(endpoints, url.(string))
-            }
-        case []string:
-            endpoints = v
-        default:
-            return nil, fmt.Errorf("unexpected type for naming-api-endpoint: %T", v)
-        }
-        return endpoints, nil
+    urls, ok := raw.([]interface{})
+    if !ok {
+        logging.Error(fmt.Sprintf("❌ Failed to parse %q from config — expected a list of URLs", scenario_vars.NamingEndpoint))
+        return
     }
 
-    return nil, fmt.Errorf("key %q not found in config", key)
+    for _, u := range urls {
+        urlStr, ok := u.(string)
+        if !ok {
+            logging.Warn("⚠️ Skipping a non-string URL in naming-api-endpoint")
+            continue
+        }
+
+        logging.Info(fmt.Sprintf("🔁 Running Naming tests for: %s", urlStr))
+        shared_state.SetSharedState(ctx, "activeNamingEndpoint", urlStr)
+
+        registerNamingStepBindings(ctx, logging)
+    }
 }
+
+func NamingSteps(ctx *common.AtlasScenarioContext, logging *scenario_logging.ScenarioLogger) {
+    RunNamingTestsAcrossEndpoints(ctx, logging)
+}
+baseURL := shared_state.GetSharedState(ctx).Get("activeNamingEndpoint").(string)
