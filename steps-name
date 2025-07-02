@@ -151,3 +151,14 @@ ctx.When(expr: "^a GET request is sent to the (.*) endpoint (.*)$", func(ctx con
 
     return ctx, nil
 })
+
+
+func readBodyAsString(resp *http.Response) (string, error) {
+    if resp == nil || resp.Body == nil {
+        return "", nil
+    }
+    defer resp.Body.Close()
+    body, err := io.ReadAll(resp.Body)
+    return string(body), err
+}
+
