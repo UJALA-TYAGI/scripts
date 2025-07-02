@@ -1,95 +1,23 @@
-func RunNamingTestsAcrossEndpoints(ctx *common.AtlasScenarioContext, logging *scenario_logging.ScenarioLogger) {
-    config := GetScenarioConfig(ctx)
-    raw := config.Get(scenario_vars.NamingEndpoint)
-
-    urls, ok := raw.([]interface{})
-    if !ok {
-        logging.Error(fmt.Sprintf("❌ Failed to parse %q from config — expected a list of URLs", scenario_vars.NamingEndpoint))
-        return
-    }
-
-    for _, u := range urls {
-        urlStr, ok := u.(string)
-        if !ok {
-            logging.Warn("⚠️ Skipping a non-string URL in naming-api-endpoint")
-            continue
-        }
-
-        logging.Info(fmt.Sprintf("🔁 Running Naming tests for: %s", urlStr))
-        shared_state.SetSharedState(ctx, "activeNamingEndpoint", urlStr)
-
-        registerNamingStepBindings(ctx, logging)
-    }
-}
-
-func NamingSteps(ctx *common.AtlasScenarioContext, logging *scenario_logging.ScenarioLogger) {
-    RunNamingTestsAcrossEndpoints(ctx, logging)
-}
-baseURL := shared_state.GetSharedState(ctx).Get("activeNamingEndpoint").(string)
-
-
-
-func createRequest(vars ScenarioConfig, endpoint string, method string) ([]*http.Response, error) {
-    raw := vars.Get(NamingEndpoint) // NamingEndpoint is a const string elsewhere
-    urlsInterface, ok := raw.([]interface{})
-    if !ok {
-        return nil, fmt.Errorf("naming-api-endpoint is not a list")
-    }
-
-    var responses []*http.Response
-    for _, u := range urlsInterface {
-        baseURL, ok := u.(string)
-        if !ok {
-            return nil, fmt.Errorf("found non-string URL in naming-api-endpoint")
-        }
-
-        apiEndpoint := baseURL + endpoint
-        req, err := http.NewRequest(method, apiEndpoint, nil)
-        if err != nil {
-            return nil, err
-        }
-
-        // add headers, tokens if needed
-
-        client := &http.Client{}
-        resp, err := client.Do(req)
-        if err != nil {
-            return nil, err
-        }
-
-        responses = append(responses, resp)
-    }
-
-    return responses, nil
-}
-
-
-
 func createRequest(vars ScenarioConfig, endpoint string, method string) (*http.Request, error) {
     raw := vars.Get(NamingEndpoint)
 
-    var endpoints []string
-    switch val := raw.(type) {
-    case []interface{}:
-        for _, ep := range val {
-            str, ok := ep.(string)
-            if ok {
-                endpoints = append(endpoints, str)
-            }
-        }
-    case string:
-        endpoints = []string{val}
-    default:
-        return nil, fmt.Errorf("expected naming-api-endpoint to be a string or list of strings")
+    urlList, ok := raw.([]interface{})
+    if !ok {
+        return nil, fmt.Errorf("expected naming-api-endpoint to be a list of strings")
     }
 
-    for _, baseURL := range endpoints {
+    for _, u := range urlList {
+        baseURL, ok := u.(string)
+        if !ok {
+            continue // skip non-string values
+        }
+
         fullURL := baseURL + endpoint
         body := bytes.NewBuffer(nil)
 
         req, err := http.NewRequest(method, fullURL, body)
         if err != nil {
-            continue // try next endpoint
+            continue
         }
 
         token, _, err := ida.GetIdaAccessToken(
@@ -99,7 +27,7 @@ func createRequest(vars ScenarioConfig, endpoint string, method string) (*http.R
             vars.Get(IdaProviderProd),
         )
         if err != nil {
-            continue // try next endpoint
+            continue
         }
 
         req.Header.Set("Content-Type", "application/json")
@@ -108,6 +36,5 @@ func createRequest(vars ScenarioConfig, endpoint string, method string) (*http.R
         return req, nil // ✅ first successful request
     }
 
-    return nil, fmt.Errorf("failed to create request for all configured naming-api-endpoints")
+    return nil, fmt.Errorf("failed to create request for all naming-api-endpoints")
 }
-
