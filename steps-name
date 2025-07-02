@@ -90,3 +90,64 @@ ctx.When(expr: "^a GET request is sent to the (.*) endpoint (.*)$", func(ctx con
 
     return ctx, nil
 })
+
+
+ctx.When(expr: "^a GET request is sent to the (.*) endpoint (.*)$", func(ctx context.Context, api string, endpoint string) (context.Context, error) {
+    state := shared_state.GetSharedState(ctx)
+    config := GetScenarioConfig(ctx)
+    logger := scenario_logging.GetScenarioLogger(ctx)
+
+    // 🔹 Call Naming endpoint
+    logger.Step("🔹 [Host: NamingEndpoint] Sending request to: %s", endpoint)
+    namingReq, err := createNamingRequest(config, endpoint, http.MethodGet)
+    if err != nil {
+        return ctx, errors.Wrap(err, "failed to create request for NamingEndpoint")
+    }
+
+    namingResp, err := sendRequest(namingReq)
+    if err != nil {
+        return ctx, errors.Wrap(err, "request failed for NamingEndpoint")
+    }
+
+    namingBody, err := readBodyAsString(namingResp)
+    if err != nil {
+        return ctx, errors.Wrap(err, "failed to read response body from NamingEndpoint")
+    }
+
+    err = state.ApiUnderTest.RecordResponse(*namingReq, *namingResp)
+    if err != nil {
+        return ctx, errors.Wrap(err, "failed to record Naming response")
+    }
+    logger.Step("✅ [Host: NamingEndpoint] Response recorded successfully")
+
+    // 🔸 Optionally test GJRN endpoint
+    if flag, ok := config.Get("enable-gjrn-tests").(bool); ok && flag {
+        logger.Step("🔹 [Host: GJRNEndpoint] Sending request to: %s", endpoint)
+        gjrnReq, err := createGJRNRequest(config, endpoint, http.MethodGet)
+        if err != nil {
+            logger.Step("❌ GJRN request creation failed: %v", err)
+            return ctx, err
+        }
+
+        gjrnResp, err := sendRequest(gjrnReq)
+        if err != nil {
+            logger.Step("❌ GJRN request failed: %v", err)
+            return ctx, err
+        }
+
+        gjrnBody, err := readBodyAsString(gjrnResp)
+        if err != nil {
+            return ctx, errors.Wrap(err, "failed to read response body from GJRNEndpoint")
+        }
+
+        if namingBody == gjrnBody {
+            logger.Step("✅ GJRN and Naming responses match exactly")
+        } else {
+            logger.Step("⚠️ GJRN and Naming responses differ")
+            logger.Step("🧪 Naming response:\n%s", namingBody)
+            logger.Step("🧪 GJRN response:\n%s", gjrnBody)
+        }
+    }
+
+    return ctx, nil
+})
