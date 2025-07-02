@@ -1,0 +1,21 @@
+func ExtractNamingEndpoints(rawConfig map[string]interface{}) ([]string, error) {
+    key := "naming-api-endpoint"
+    var endpoints []string
+
+    if vals, ok := rawConfig[key]; ok {
+        // It's either a []interface{} or []string depending on your loader
+        switch v := vals.(type) {
+        case []interface{}:
+            for _, url := range v {
+                endpoints = append(endpoints, url.(string))
+            }
+        case []string:
+            endpoints = v
+        default:
+            return nil, fmt.Errorf("unexpected type for naming-api-endpoint: %T", v)
+        }
+        return endpoints, nil
+    }
+
+    return nil, fmt.Errorf("key %q not found in config", key)
+}
