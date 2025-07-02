@@ -38,3 +38,55 @@ func createRequest(vars ScenarioConfig, endpoint string, method string) (*http.R
 
     return nil, fmt.Errorf("failed to create request for all naming-api-endpoints")
 }
+
+
+
+ctx.When(expr: "^a GET request is sent to the (.*) endpoint (.*)$", func(ctx context.Context, api string, endpoint string) (context.Context, error) {
+    state := shared_state.GetSharedState(ctx)
+    config := GetScenarioConfig(ctx)
+    logger := scenario_logging.GetScenarioLogger(ctx)
+
+    // ➤ Host 1: NamingEndpoint
+    logger.Step("🔹 [Host: NamingEndpoint] Sending request to: %s", endpoint)
+    namingReq, err := createNamingRequest(config, endpoint, http.MethodGet)
+    if err != nil {
+        return ctx, errors.Wrap(err, "failed to create request for NamingEndpoint")
+    }
+
+    namingResp, err := sendRequest(namingReq)
+    if err != nil {
+        return ctx, errors.Wrap(err, "request failed for NamingEndpoint")
+    }
+
+    // ✅ Only record this response for use in Then steps
+    err = state.ApiUnderTest.RecordResponse(*namingReq, *namingResp)
+    if err != nil {
+        return ctx, errors.Wrap(err, "failed to record Naming response")
+    }
+
+    logger.Step("✅ [Host: NamingEndpoint] Response recorded successfully")
+
+    // ➤ Host 2: GJRNEndpoint (if enabled)
+    if flag, ok := config.Get("enable-gjrn-tests").(bool); ok && flag {
+        logger.Step("🔹 [Host: GJRNEndpoint] Sending request to: %s", endpoint)
+
+        gjrnReq, err := createGJRNRequest(config, endpoint, http.MethodGet)
+        if err != nil {
+            logger.Step("❌ GJRN request creation failed: %v", err)
+            return ctx, err
+        }
+
+        gjrnResp, err := sendRequest(gjrnReq)
+        if err != nil {
+            logger.Step("❌ GJRN request failed: %v", err)
+            return ctx, err
+        }
+
+        logger.Step("✅ [Host: GJRNEndpoint] Response received successfully")
+
+        // ⛔ Do NOT record GJRN response to shared state — used only for observation/logs
+        // Optionally, you could compare the response here or log it
+    }
+
+    return ctx, nil
+})
