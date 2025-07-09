@@ -1,9 +1,9 @@
 **Background:**
-We have an existing E2E test suite for the Atlas Naming service, which runs feature-based scenarios and validates API behavior. A new GJRN host has been introduced that serves the same endpoints and responses as the Naming host, requiring test coverage without duplicating scenarios.
+To improve isolation, scalability, and environment management, we plan to run the Atlas Naming service inside virtual clusters (vClusters) instead of directly on shared Kubernetes namespaces.
 
 **What I want to do:**
-Extend the current E2E test logic to run the same scenario steps against both the Naming and GJRN hosts, by internally routing requests to both and comparing their responses.
+Deploy the Naming service into vClusters, set up necessary configs (like ingress, secrets, and service discovery), and validate its functionality via E2E tests against the vCluster endpoints.
 
 **What it achieves:**
-This approach ensures shared test coverage across both hosts with minimal overhead, enables early detection of discrepancies between Naming and GJRN responses, and maintains a unified, readable Cucumber test report.
+This enables better test environment isolation, reduces risk of conflicts across teams, and aligns with the org’s direction toward ephemeral and sandboxed infra environments.
 
