@@ -1,0 +1,11 @@
+### **Background**
+
+Our customers interact with internal AWS boundaries (e.g., Portfolio, Workload, Network Boundaries) via Kubernetes APIs. Until now, there hasn’t been a centralized, user-friendly reference explaining how to make these API calls.
+
+### **Objective**
+
+Create a detailed Kubernetes API reference document outlining all supported operations (GET, POST, PATCH, etc.) for boundary resources, including URL formats, headers, payload structures, and expected responses.
+
+### **What this achieves**
+
+Helps customers easily understand and correctly use Kubernetes APIs to manage boundary resources, reducing onboarding time and minimizing errors during integration.
