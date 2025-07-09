@@ -107,4 +107,73 @@ GET https://<BASE_URL>/apis/marketplace.retail.atlas.aws.jpmchase.net/v1alpha1/n
 
 ---
 
+Thanks! Let's document the **Create Resource** operation for the **Atlas 2.0 environment**, following the same clean structure as before. I've corrected typos and formatted the sample YAML to ensure it's readable and valid.
+
+---
+
+# ➕ Operation: Create Resource
+
+## 📄 Overview
+
+Use this API operation to **create a new resource** of a specified kind in a specific namespace. You must provide a valid YAML definition of the resource. The structure should include the correct API version, kind, metadata, and specification (`spec`) fields.
+
+This is typically used when deploying new portfolio boundaries, network boundaries, or marketplace workload boundaries.
+
+---
+
+## 🔗 Endpoint
+
+```
+POST /apis/<API_GROUP>/v1alpha1/namespaces/<NAMESPACE>/<RESOURCE_KIND>
+```
+
+---
+
+## 🔸 Path Parameters
+
+| Parameter         | Required | Description                                           |
+| ----------------- | -------- | ----------------------------------------------------- |
+| `<API_GROUP>`     | ✅        | One of the supported API groups (see top of document) |
+| `<NAMESPACE>`     | ✅        | Target namespace for the resource                     |
+| `<RESOURCE_KIND>` | ✅        | One of: `awspb`, `awsnb`, or `awsmktpwb`              |
+
+---
+
+## 🧾 Required Headers
+
+```http
+Authorization: Bearer <your-auth-token>
+Content-Type: application/yaml
+```
+
+---
+
+## 📤 Request Body
+
+The request body must be a valid YAML definition of the resource.
+
+### 🧾 Example: Create a Portfolio Boundary Resource
+
+---
+
+## ✅ Success Response
+
+**Status Code:** `201 Created`
+**Content-Type:** `application/json`
+
+```json
+{
+  "status": "Success",
+  "message": "Resource 'example-boundary' created successfully in namespace 'ds-test--105892'."
+}
+```
+
+
+## ⚠️ Notes
+
+* The `Content-Type` **must be** `application/yaml`.
+* Ensure all required fields in the `spec` section match the schema for the given resource kind.
+* If any validation fails (e.g., invalid parent JRN or missing fields), the API will return a `400 Bad Request`.
+
+
 Let me know when you're ready to proceed to the **Create Resource** operation, and I’ll maintain the same style and clarity.
