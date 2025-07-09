@@ -177,3 +177,148 @@ The request body must be a valid YAML definition of the resource.
 
 
 Let me know when you're ready to proceed to the **Create Resource** operation, and I’ll maintain the same style and clarity.
+
+
+
+Great! Let's now document the **Update Resource** operation for the **Atlas 2.0 environment**, in the same structured and Markdown-ready format. This operation typically replaces an existing resource with a new specification (full update).
+
+---
+
+# 🔄 Operation: Update Resource
+
+## 📄 Overview
+
+Use this API operation to **update an existing resource** of a specific kind in a given namespace. This is a full resource replacement operation — the submitted YAML must include the complete specification, not just the modified fields.
+
+If the specified resource does not exist, the request will fail with a `404`.
+
+---
+
+## 🔗 Endpoint
+
+```
+PUT /apis/<API_GROUP>/v1alpha1/namespaces/<NAMESPACE>/<RESOURCE_KIND>/<RESOURCE_NAME>
+```
+
+---
+
+## 🔸 Path Parameters
+
+| Parameter         | Required | Description                           |
+| ----------------- | -------- | ------------------------------------- |
+| `<API_GROUP>`     | ✅        | One of the supported API groups       |
+| `<NAMESPACE>`     | ✅        | Namespace where the resource exists   |
+| `<RESOURCE_KIND>` | ✅        | One of: `awspb`, `awsnb`, `awsmktpwb` |
+| `<RESOURCE_NAME>` | ✅        | Name of the resource to be updated    |
+
+---
+
+## 🧾 Required Headers
+
+```http
+Authorization: Bearer <your-auth-token>
+Content-Type: application/yaml
+```
+
+---
+
+## 📤 Request Body
+
+You must provide the full YAML definition of the resource, including unchanged fields. Partial updates are not supported in this operation (use PATCH for that).
+
+### 🧾 Example: Update an Existing Portfolio Boundary Resource
+
+```yaml
+apiVersion: portfolio.wholesale.atlas.aws.jpmchase.net/v1alpha1
+kind: AWSPortfolioBoundary
+metadata:
+  name: example-boundary
+  namespace: ds-test--105892
+spec:
+  deploymentScope:
+    jrn: jrn:jpm:iep-test:::depscope:103892?version=2   # Version updated
+  enabledRegions:
+    - us-west-2
+    - us-east-1   # New region added
+  orgUnitName: 13-atlas2testing-v2-ou-2009c891-2
+  parent:
+    jrn: jrn:jpm:atlas-dev:awdla:ds-test--103892:awspb:12-atlas2testing-v4
+  satisfiedControls:
+    connectivity: jrn:jpm:atlas:::connect:internal
+    dataclassification: jrn:jpm:atlas:::dataclass:internal
+    hitrust: jrn:jpm:atlas:::hitrust:none
+    jurisdiction: jrn:jpm:atlas:::jur:default
+    pci: jrn:jpm:atlas:::pci:cat3
+    soc: jrn:jpm:atlas:::soc:none
+    sox: jrn:jpm:atlas:::sox:false
+  scps:
+    - jrn: jrn:jpm:atlas-dev:awdla:ds-dev--atlas2-platform-alpha-app-v1:awsongscp:full-aws-access
+  trustedScopes:
+    - attributes:
+        - key: ipme-sealappid
+          value: "89774"
+        - key: apne-sealdeptoid
+          value: "183892"
+      name: i-trust-portfolio-boundary
+      type: Portfolio
+```
+
+---
+
+## ✅ Success Response
+
+**Status Code:** `200 OK`
+**Content-Type:** `application/json`
+
+```json
+{
+  "status": "Success",
+  "message": "Resource 'example-boundary' updated successfully in namespace 'ds-test--105892'."
+}
+```
+
+---
+
+## ❌ Error Scenario
+
+If the resource does not exist, or if the YAML is invalid, the update will fail.
+
+### 📉 Example: Resource Not Found
+
+**Status Code:** `404 Not Found`
+**Content-Type:** `application/json`
+
+```json
+{
+  "status": "Failure",
+  "message": "Resource 'example-boundary' not found in namespace 'ds-test--105892'."
+}
+```
+
+### 📉 Example: Validation Error
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "status": "Failure",
+  "message": "Validation failed for resource 'example-boundary'.",
+  "errors": [
+    "spec.trustedScopes[0].attributes[1].key is missing",
+    "spec.deploymentScope.jrn is not in a valid JRN format"
+  ]
+}
+```
+
+---
+
+## ⚠️ Notes
+
+* This is a **full update** (like a PUT operation in REST); it replaces the entire resource object.
+* Always retrieve the latest state of the resource before making an update, to avoid unintentional overwrites.
+* Use `PATCH` if you only want to modify specific fields.
+
+---
+
+Let me know if you'd like to move on to the **Patch** or **Delete** operation next — I’ll continue in the same format.
+
