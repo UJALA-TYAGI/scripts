@@ -322,3 +322,120 @@ If the resource does not exist, or if the YAML is invalid, the update will fail.
 
 Let me know if you'd like to move on to the **Patch** or **Delete** operation next — I’ll continue in the same format.
 
+
+
+Great! Let's now document the **Patch Resource** operation for the **Atlas 2.0 environment**, keeping it consistent with our previous sections. This operation is useful when you want to update **only specific fields** of an existing resource without replacing the whole object.
+
+---
+
+# ✏️ Operation: Patch Resource
+
+## 📄 Overview
+
+Use this API operation to **partially update an existing resource** of a specific kind in a given namespace. Unlike the `Update` (PUT) operation, the `Patch` operation allows you to send only the fields you want to modify.
+
+This operation is useful for quick changes such as updating a region, adding a control, or modifying a specific annotation — without altering the entire resource structure.
+
+---
+
+## 🔗 Endpoint
+
+```
+PATCH /apis/<API_GROUP>/v1alpha1/namespaces/<NAMESPACE>/<RESOURCE_KIND>/<RESOURCE_NAME>
+```
+
+---
+
+## 🔸 Path Parameters
+
+| Parameter         | Required | Description                              |
+| ----------------- | -------- | ---------------------------------------- |
+| `<API_GROUP>`     | ✅        | One of the supported API groups          |
+| `<NAMESPACE>`     | ✅        | Namespace where the resource exists      |
+| `<RESOURCE_KIND>` | ✅        | One of: `awspb`, `awsnb`, or `awsmktpwb` |
+| `<RESOURCE_NAME>` | ✅        | Name of the resource to be patched       |
+
+---
+
+## 🧾 Required Headers
+
+```http
+Authorization: Bearer <your-auth-token>
+Content-Type: application/merge-patch+json
+```
+
+> ⚠️ The content type must be `application/merge-patch+json` or `application/strategic-merge-patch+json` depending on the patch strategy used. In most cases, `merge-patch` is sufficient.
+
+---
+
+## 📤 Request Body
+
+You only need to include the fields you want to change. The format is **JSON**, not YAML.
+
+### 🧾 Example: Patch `enabledRegions` of a Portfolio Boundary Resource
+
+```json
+{
+  "spec": {
+    "enabledRegions": ["us-west-2", "us-east-1", "eu-west-1"]
+  }
+}
+```
+
+---
+
+## ✅ Success Response
+
+**Status Code:** `200 OK`
+**Content-Type:** `application/json`
+
+```json
+{
+  "status": "Success",
+  "message": "Resource 'example-boundary' patched successfully in namespace 'ds-test--105892'."
+}
+```
+
+---
+
+## ❌ Error Scenarios
+
+### 📉 Resource Not Found
+
+**Status Code:** `404 Not Found`
+
+```json
+{
+  "status": "Failure",
+  "message": "Resource 'example-boundary' not found in namespace 'ds-test--105892'."
+}
+```
+
+---
+
+### 📉 Invalid Patch Format
+
+**Status Code:** `400 Bad Request`
+
+```json
+{
+  "status": "Failure",
+  "message": "Invalid patch payload.",
+  "errors": [
+    "Field 'enabledRegions' must be a list of strings"
+  ]
+}
+```
+
+---
+
+## ⚠️ Notes
+
+* Patch operations are **non-destructive**: they leave other fields unchanged.
+* Use this when you want to make minor edits without impacting the full resource configuration.
+* If you need to remove a field, explicitly set its value to `null` in the patch.
+
+---
+
+Let me know if you'd like to move forward with the **Delete Resource** operation or want to add `dry-run`, `status`, or other advanced operations after this.
+
