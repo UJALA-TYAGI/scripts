@@ -1,11 +1,9 @@
-### **Background**
+**Background:**
+We have an existing E2E test suite for the Atlas Naming service, which runs feature-based scenarios and validates API behavior. A new GJRN host has been introduced that serves the same endpoints and responses as the Naming host, requiring test coverage without duplicating scenarios.
 
-Our customers interact with internal AWS boundaries (e.g., Portfolio, Workload, Network Boundaries) via Kubernetes APIs. Until now, there hasn’t been a centralized, user-friendly reference explaining how to make these API calls.
+**What I want to do:**
+Extend the current E2E test logic to run the same scenario steps against both the Naming and GJRN hosts, by internally routing requests to both and comparing their responses.
 
-### **Objective**
+**What it achieves:**
+This approach ensures shared test coverage across both hosts with minimal overhead, enables early detection of discrepancies between Naming and GJRN responses, and maintains a unified, readable Cucumber test report.
 
-Create a detailed Kubernetes API reference document outlining all supported operations (GET, POST, PATCH, etc.) for boundary resources, including URL formats, headers, payload structures, and expected responses.
-
-### **What this achieves**
-
-Helps customers easily understand and correctly use Kubernetes APIs to manage boundary resources, reducing onboarding time and minimizing errors during integration.
