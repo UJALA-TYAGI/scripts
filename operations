@@ -1,0 +1,113 @@
+Absolutely! Here's the updated and **Markdown-formatted** documentation for the **List Resources** operation in the **Atlas 2.0 environment**, with the **field descriptions section removed** as requested:
+
+---
+
+# 📘 Atlas 2.0 API Resource Operations
+
+This document serves as a comprehensive guide to interact with resources in the **Atlas 2.0 environment**. The APIs exposed here follow Kubernetes-style conventions and enable users to manage domain-specific resources such as AWS boundaries through standard operations like **list**, **create**, **update**, and **delete**.
+
+All resources are namespaced, and each operation requires specifying the appropriate **API group**, **resource kind**, and **namespace**.
+
+---
+
+## 🧭 API Groups
+
+Each API group corresponds to a functional domain in the Atlas 2.0 ecosystem.
+
+| API Group                                    | Description                         |
+| -------------------------------------------- | ----------------------------------- |
+| `portfolio.wholesale.atlas.aws.jpmchase.net` | AWS Portfolio resources             |
+| `marketplace.retail.atlas.aws.jpmchase.net`  | Marketplace workload boundaries     |
+| `network.wholesale.atlas.aws.jpmchase.net`   | AWS Network boundaries              |
+| `workload.wholesale.atlas.aws.jpmchase.net`  | General workload boundary resources |
+
+---
+
+## 📦 Supported Resource Kinds
+
+The following resource kinds are available across the API groups:
+
+| Resource Kind | Description                       |
+| ------------- | --------------------------------- |
+| `awspb`       | AWS Portfolio Boundary            |
+| `awsnb`       | AWS Network Boundary              |
+| `awsmktpwb`   | AWS Marketplace Workload Boundary |
+
+---
+
+# ✅ Operation: List Resources
+
+## 📄 Overview
+
+Use this API operation to retrieve all existing resources of a particular kind within a specific namespace. This helps users inspect the current state of resources managed under Atlas 2.0.
+
+---
+
+## 🔗 Endpoint
+
+```
+GET /apis/<API_GROUP>/v1alpha1/namespaces/<NAMESPACE>/<RESOURCE_KIND>
+```
+
+---
+
+## 🔸 Path Parameters
+
+| Parameter         | Required | Description                                           |
+| ----------------- | -------- | ----------------------------------------------------- |
+| `<API_GROUP>`     | ✅        | One of the supported API groups listed above          |
+| `<NAMESPACE>`     | ✅        | Kubernetes namespace where the resources are deployed |
+| `<RESOURCE_KIND>` | ✅        | One of: `awspb`, `awsnb`, or `awsmktpwb`              |
+
+---
+
+## 🧾 Required Headers
+
+```http
+Authorization: Bearer <your-auth-token>
+Content-Type: application/json
+```
+
+---
+
+## 🌐 Sample Request URLs
+
+```
+GET https://<BASE_URL>/apis/portfolio.wholesale.atlas.aws.jpmchase.net/v1alpha1/namespaces/dev/awspb
+
+GET https://<BASE_URL>/apis/network.wholesale.atlas.aws.jpmchase.net/v1alpha1/namespaces/test/awsnb
+
+GET https://<BASE_URL>/apis/marketplace.retail.atlas.aws.jpmchase.net/v1alpha1/namespaces/prod/awsmktpwb
+```
+
+---
+
+## ✅ Success Response
+
+**Status Code:** `200 OK`
+**Content-Type:** `application/json`
+
+```json
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "metadata": {
+        "name": "sample-resource",
+        "namespace": "dev"
+      },
+      "spec": {
+        // resource-specific configuration
+      }
+    }
+  ],
+  "kind": "List",
+  "metadata": {
+    "resourceVersion": "123456"
+  }
+}
+```
+
+---
+
+Let me know when you're ready to proceed to the **Create Resource** operation, and I’ll maintain the same style and clarity.
