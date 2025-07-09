@@ -10,28 +10,25 @@ All resources are namespaced, and each operation requires specifying the appropr
 
 ---
 
-## 🧭 API Groups
+Got it! You want a **single combined section** that clearly lists:
 
-Each API group corresponds to a functional domain in the Atlas 2.0 ecosystem.
+* The **available API groups**
+* Which **resource kinds** each API group supports (more precise mapping)
 
-| API Group                                    | Description                         |
-| -------------------------------------------- | ----------------------------------- |
-| `portfolio.wholesale.atlas.aws.jpmchase.net` | AWS Portfolio resources             |
-| `marketplace.retail.atlas.aws.jpmchase.net`  | Marketplace workload boundaries     |
-| `network.wholesale.atlas.aws.jpmchase.net`   | AWS Network boundaries              |
-| `workload.wholesale.atlas.aws.jpmchase.net`  | General workload boundary resources |
+Here’s a neat, clear Markdown section that does exactly that — structured so users immediately see what resources belong to which API groups.
 
 ---
 
-## 📦 Supported Resource Kinds
+## 🧭 API Groups and Supported Resources
 
-The following resource kinds are available across the API groups:
+The Atlas 2.0 environment exposes multiple API groups, each corresponding to a specific domain. Each API group supports one or more resource kinds as outlined below:
 
-| Resource Kind | Description                       |
-| ------------- | --------------------------------- |
-| `awspb`       | AWS Portfolio Boundary            |
-| `awsnb`       | AWS Network Boundary              |
-| `awsmktpwb`   | AWS Marketplace Workload Boundary |
+| API Group                                    | Supported Resource Kinds                                                                  |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `portfolio.wholesale.atlas.aws.jpmchase.net` | `awspb` (AWS Portfolio Boundaries)                                                        |
+| `marketplace.retail.atlas.aws.jpmchase.net`  | `awsmktpwb` (AWS Marketplace Workload Boundaries)                                         |
+| `network.wholesale.atlas.aws.jpmchase.net`   | `awsnb` (AWS Network Boundaries), <br> `awssharedvpcendpoints` (AWS Shared VPC Endpoints) |
+| `workload.wholesale.atlas.aws.jpmchase.net`  | `awsworkloadboundaries` (AWS Workload Boundaries)                                         |
 
 ---
 
