@@ -151,7 +151,6 @@ func errorResponseGenerator(body string, httpResponseCode int, err error) *envoy
 
 
 _______________
-
 package validation
 
 import (
@@ -159,17 +158,17 @@ import (
 	"strings"
 )
 
-// BoundaryType represents a known API boundary.
+// BoundaryType represents the API boundaries for role-based access control.
 type BoundaryType string
 
 const (
-	PortfolioBoundary       BoundaryType = "portfolio"
-	NetworkBoundary         BoundaryType = "network"
-	WholesaleWorkloadBoundary BoundaryType = "wholesale_workload"
-	WorkloadBoundary        BoundaryType = "workload"
+	PortfolioBoundary          BoundaryType = "portfolio"
+	NetworkBoundary            BoundaryType = "network"
+	WholesaleWorkloadBoundary  BoundaryType = "wholesale_workload"
+	WorkloadBoundary           BoundaryType = "workload"
 )
 
-// ErrUnauthorizedBoundaryAccess is returned when roles do not grant access to the API boundary.
+// ErrUnauthorizedBoundaryAccess indicates missing required role prefix for access.
 type ErrUnauthorizedBoundaryAccess struct {
 	RequiredPrefix string
 }
@@ -178,12 +177,13 @@ func (e *ErrUnauthorizedBoundaryAccess) Error() string {
 	return fmt.Sprintf("missing required role with prefix %q", e.RequiredPrefix)
 }
 
-// ValidateBoundaryAccess checks if the provided roles include at least one role
-// authorized to access the API boundary corresponding to the request path.
+// ValidateBoundaryAccess checks if the user's roles authorize access to the boundary
+// derived from the request path. Returns nil if authorized, or error if not.
 func ValidateBoundaryAccess(path string, roles []string) error {
 	boundary := extractBoundaryFromPath(path)
+
+	// If no known boundary is matched, allow access by default.
 	if boundary == "" {
-		// No boundary restriction on this path
 		return nil
 	}
 
@@ -191,32 +191,44 @@ func ValidateBoundaryAccess(path string, roles []string) error {
 
 	for _, role := range roles {
 		if strings.HasPrefix(role, expectedPrefix) {
-			return nil
+			return nil // Authorized
 		}
 	}
 
 	return &ErrUnauthorizedBoundaryAccess{RequiredPrefix: expectedPrefix}
 }
 
-// extractBoundaryFromPath returns the boundary type for a given API path.
-// Returns empty string if path does not match any known boundary.
+// extractBoundaryFromPath determines boundary type by matching path prefix
+// with expected API groups. Next character after prefix (if any) must be
+// '.', '/' or end of string for a valid match.
 func extractBoundaryFromPath(path string) BoundaryType {
+	matchesPrefix := func(prefix string) bool {
+		if !strings.HasPrefix(path, prefix) {
+			return false
+		}
+		if len(path) == len(prefix) {
+			return true
+		}
+		nextChar := path[len(prefix)]
+		return nextChar == '.' || nextChar == '/'
+	}
+
 	switch {
-	case strings.HasPrefix(path, "/apis/portfolio"):
+	case matchesPrefix("/apis/portfolio"):
 		return PortfolioBoundary
-	case strings.HasPrefix(path, "/apis/network"):
+	case matchesPrefix("/apis/network"):
 		return NetworkBoundary
-	case strings.HasPrefix(path, "/apis/workload"):
+	case matchesPrefix("/apis/workload"):
 		return WholesaleWorkloadBoundary
-	case strings.HasPrefix(path, "/apis/marketplace"):
+	case matchesPrefix("/apis/marketplace"):
 		return WorkloadBoundary
 	default:
 		return ""
 	}
 }
 
-// buildRolePrefix constructs the role prefix string given a boundary type.
+// buildRolePrefix constructs the role prefix string used for role validation.
 func buildRolePrefix(boundary BoundaryType) string {
-	// Role prefix format: "<UPPERCASE_BOUNDARY>_BOUNDARY_"
 	return strings.ToUpper(string(boundary)) + "_BOUNDARY_"
 }
+
