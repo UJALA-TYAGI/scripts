@@ -232,3 +232,10 @@ func buildRolePrefix(boundary BoundaryType) string {
 	return strings.ToUpper(string(boundary)) + "_BOUNDARY_"
 }
 
+Sure! Here's a brief paragraph summarizing what you've done:
+
+---
+
+I added a validation layer in our `extauth` flow to ensure that only users with the correct audience and scoped roles can access specific resource types. Based on the request path (like `/apis/portfolio`), we check if the token has the expected audience (e.g., `Atlas2PB`) and one of the allowed roles (like `PORTFOLIO_BOUNDARY_MANAGER` or `PORTFOLIO_BOUNDARY_READER`). This ensures that each API group is only accessible by users who are authorized for that specific boundary.
+
+
