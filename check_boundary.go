@@ -239,3 +239,21 @@ Sure! Here's a brief paragraph summarizing what you've done:
 I added a validation layer in our `extauth` flow to ensure that only users with the correct audience and scoped roles can access specific resource types. Based on the request path (like `/apis/portfolio`), we check if the token has the expected audience (e.g., `Atlas2PB`) and one of the allowed roles (like `PORTFOLIO_BOUNDARY_MANAGER` or `PORTFOLIO_BOUNDARY_READER`). This ensures that each API group is only accessible by users who are authorized for that specific boundary.
 
 
+Sure! Here's a slightly more casual version you can share with your teammate:
+
+---
+
+So I added a validation function that checks if the request is hitting any of the boundary-specific API groups — like `/apis/portfolio`, `/apis/network`, etc. Based on that, it figures out which boundary the request is targeting (like PORTFOLIO, NETWORK, etc.).
+
+Then it looks at the token and makes sure two things:
+
+1. The **audience** in the token matches the expected one for that boundary (like `Atlas2PB` for `PORTFOLIO`).
+2. The user has the **right role** for that boundary — either a manager or reader role (like `PORTFOLIO_BOUNDARY_MANAGER` or `PORTFOLIO_BOUNDARY_READER`).
+
+If both checks pass, the request goes through. If not, it gets blocked in the extauth flow. Basically, this ensures only the right users with proper access can call specific boundary APIs.
+
+---
+
+Let me know if you want to tweak the tone even more!
+
+
