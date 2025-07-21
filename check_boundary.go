@@ -1,6 +1,3 @@
-Thanks for the detailed context, Ujala — you're building a tightly controlled auth flow, and it's great you're keeping security cleanly separated.
-
----
 
 ## ✅ Quick Summary of Your Goal
 
@@ -106,19 +103,49 @@ if audOk && roleOk {
 
 ---
 
-## 🚀 Final Outcome
+func (tokenSuite *TokenTestSuite) TestValidateToken() {
+	tests := []struct {
+		name           string
+		aud            string
+		roles          []string
+		expectedResult bool
+	}{
+		{
+			name:           "Valid audience and allowed role",
+			aud:            "ds-ceb-123-v1",
+			roles:          []string{"NETWORK_BOUNDARY_RESOURCE_MANAGER"},
+			expectedResult: true,
+		},
+		{
+			name:           "Valid audience but disallowed role",
+			aud:            "ds-ceb-123-v1",
+			roles:          []string{"SOME_OTHER_ROLE"},
+			expectedResult: false,
+		},
+		{
+			name:           "Invalid audience",
+			aud:            "unknown-env",
+			roles:          []string{"NETWORK_BOUNDARY_RESOURCE_MANAGER"},
+			expectedResult: false,
+		},
+		{
+			name:           "Multiple roles - one valid",
+			aud:            "ds-ceb-123-v1",
+			roles:          []string{"RANDOM_ROLE", "NETWORK_BOUNDARY_RESOURCE_READER"},
+			expectedResult: true,
+		},
+		{
+			name:           "Empty roles list",
+			aud:            "ds-ceb-123-v1",
+			roles:          []string{},
+			expectedResult: false,
+		},
+	}
 
-* ✅ You validate audience-role mapping *once*, efficiently.
-* ✅ Logic stays cleanly in `token.go`, which is its rightful place.
-* ✅ `extauth.go` simply *uses* that validator.
-* ✅ Config remains hidden from main, as you required.
-
----
-
-Would you like me to:
-
-* Refactor the exact block in `extauth.go` for you?
-* Add unit tests for the `ValidateAudienceRoleMapping()`?
-* Help log the failing `aud` and `role` clearly for traceability?
-
-Let me know what you'd like next.
+	for _, tt := range tests {
+		tokenSuite.T().Run(tt.name, func(t *testing.T) {
+			valid := token.Validate(tt.aud, tt.roles)
+			assert.Equal(t, tt.expectedResult, valid)
+		})
+	}
+}
