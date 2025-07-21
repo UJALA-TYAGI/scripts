@@ -1,156 +1,124 @@
-Yes, you can **absolutely implement this without changing `main.go`**, by following this refined plan:
+Thanks for the detailed context, Ujala — you're building a tightly controlled auth flow, and it's great you're keeping security cleanly separated.
 
 ---
 
-### ✅ Goal
+## ✅ Quick Summary of Your Goal
 
-* Keep the **audience-role mapping** in a config file ✅
-* Load it **internally inside the `token` package** (no changes to `main.go`) ✅
-* Keep the rest of the code untouched — just validate after token decoding ✅
+In `extauth.go`, during request processing, **you want to reject requests where:**
 
----
+* `aud` and `scopedRoles` in the JWT token do not align with the allowed audience-role mapping.
 
-### ✅ Updated Plan (Minimal Changes, Fully Isolated)
+You already have:
 
-1. Create a config file: `audience_roles.yaml`
-2. Load the config from within the `token` package (once, lazily)
-3. Implement the role validation in `token.ValidateRolesForAudience`
-4. Call that validation from `extauth.Check()` (you’re already modifying that part)
+* Token parsing and extraction logic in `token.go`
+* `decodeToken()` that gives you structured token fields like `aud`, `role`, etc.
+* You want the validation **only once**, and efficiently.
 
 ---
 
-### 🗂️ 1. `audience_roles.yaml`
+## 🎯 Recommendation: **Call `ValidateAudienceRoleMapping()` from `token.go` inside `extauth.go`**
 
-Same as before:
+### Why?
 
-```yaml
-audience_roles:
-  JPMC:URI:RS-112081-139591-Atlas2PBBeta-PROD:
-    - PORTFOLIO_BOUNDARY_RESOURCE_MANAGER
-    - PORTFOLIO_BOUNDARY_RESOURCE_READER
-  JPMC:URI:RS-112081-139592-Atlas2NBBeta-PROD:
-    - NETWORK_BOUNDARY_RESOURCE_MANAGER
-    - NETWORK_BOUNDARY_RESOURCE_READER
-  JPMC:URI:RS-90467-141027-Atlas2RWBBeta-PROD:
-    - RETAIL_WORKLOAD_BOUNDARY_RESOURCE_MANAGER
-    - RETAIL_WORKLOAD_BOUNDARY_RESOURCE_READER
-  JPMC:URI:RS-112081-150439-Atlas2WWBBeta-PROD:
-    - WHOLESALE_BOUNDARY_RESOURCE_MANAGER
-    - WHOLESALE_BOUNDARY_RESOURCE_READER
-```
+| Criteria                          | Validate inside `token.go` | Validate inline in `extauth.go` |
+| --------------------------------- | -------------------------- | ------------------------------- |
+| Centralized logic (DRY)           | ✅ Yes                      | ❌ Duplicates logic              |
+| Reuse in other services           | ✅ Yes                      | ❌ No                            |
+| Ease of testing and unit coverage | ✅ Yes (clean func)         | ❌ Mixed with request logic      |
+| Separation of concerns            | ✅ Token validation only    | ❌ Breaks modular boundaries     |
+| Simplicity in `extauth.go`        | ✅ Yes                      | ❌ More cluttered code           |
+| Config loaded once (singleton)    | ✅ Already handled          | ❌ Would need re-setup           |
 
 ---
 
-### 🧠 2. Inside `token/config.go` — Lazy YAML Loader
+## ✅ What You Should Do
+
+### Step 1: In `token.go`, export the validator
+
+Make sure `ValidateAudienceRoleMapping` is **exported**:
 
 ```go
-package token
-
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"sync"
-
-	"gopkg.in/yaml.v2"
-)
-
-type audienceRoleConfig struct {
-	AudienceRoles map[string][]string `yaml:"audience_roles"`
-}
-
-var (
-	once              sync.Once
-	audienceRoles     map[string][]string
-	loadConfigErr     error
-	configFilePath    = "/etc/authnz/audience_roles.yaml" // Or hardcode based on your deployment
-)
-
-func getAudienceRoleMap() (map[string][]string, error) {
-	once.Do(func() {
-		absPath, _ := filepath.Abs(configFilePath)
-		data, err := os.ReadFile(absPath)
-		if err != nil {
-			loadConfigErr = fmt.Errorf("failed to read audience-role config: %w", err)
-			return
-		}
-
-		var config audienceRoleConfig
-		err = yaml.Unmarshal(data, &config)
-		if err != nil {
-			loadConfigErr = fmt.Errorf("failed to parse audience-role config: %w", err)
-			return
-		}
-
-		audienceRoles = config.AudienceRoles
-	})
-	return audienceRoles, loadConfigErr
-}
+func ValidateAudienceRoleMapping(token map[string]string) error { ... }
 ```
 
 ---
 
-### ✅ 3. In `token.go` — Role Validation Logic
+### Step 2: In `extauth.go`, extract `aud` and `scopedRoles` from `jwtDecodedValues`
 
 ```go
-func ValidateRolesForAudience(aud string, roles []string) error {
-	roleMap, err := getAudienceRoleMap()
-	if err != nil {
-		return errors.NewInternalError(errors.InvalidAudience, fmt.Sprintf("audience-role config error: %v", err))
-	}
-
-	allowed, ok := roleMap[aud]
-	if !ok {
-		return errors.NewInternalError(errors.InvalidAudience, fmt.Sprintf("audience %s is not recognized", aud))
-	}
-
-	allowedSet := make(map[string]struct{})
-	for _, role := range allowed {
-		allowedSet[role] = struct{}{}
-	}
-
-	for _, r := range roles {
-		if _, ok := allowedSet[r]; !ok {
-			return errors.NewInternalError(errors.RoleAudienceMismatch, fmt.Sprintf("role %s is not allowed for audience %s", r, aud))
-		}
-	}
-
-	return nil
-}
+aud, audOk := jwtDecodedValues["aud"]
+scopedRoles, roleOk := jwtDecodedValues["ScopedRoles"]
 ```
+
+> Assuming `jwtDecodedValues` is a map of JWT fields.
 
 ---
 
-### 🧩 4. In `extauth.go` — Add This One Line
-
-This is the **only integration point**:
+### Step 3: Convert to `map[string]string` and call the validator
 
 ```go
-// Already done earlier
-aud := jwtDecodedValues["aud"].GetStringValue()
+if audOk && roleOk {
+    tokenMap := map[string]string{
+        "aud":  aud.GetStringValue(),
+        "role": scopedRoles.GetStringValue(),
+    }
 
-// Get roles from depscopeToRoleMap
-var allRoles []string
-for _, roles := range depscopeToRoleMap {
-    allRoles = append(allRoles, roles...)
-}
-
-// Add this validation
-if err := token.ValidateRolesForAudience(aud, allRoles); err != nil {
-    logger.Error().Msgf("audience-role validation failed: %v", err)
-    return errorResponseGenerator("audience-role validation failed:", http.StatusForbidden, err), nil
+    if err := token.ValidateAudienceRoleMapping(tokenMap); err != nil {
+        customErr := errors.New(
+            errors.RoleNotPermittedForAudience,
+            fmt.Sprintf("audience-role mismatch: %v", err),
+            errors.RoleNotPermittedForAudienceSolution,
+        )
+        logger.Error().Msgf("audience-role validation failed: %v", customErr)
+        return errorResponseGenerator("authorization denied", http.StatusForbidden, customErr), nil
+    }
 }
 ```
 
 ---
 
-### ✅ Outcome
+### 🔄 Where to Place This in `extauth.go`:
 
-* ✔ No changes to `main.go`
-* ✔ Configurable via YAML
-* ✔ Automatically loaded once, internally
-* ✔ Easy to update audience-role mappings without code changes
+Just **after extracting `jwtDecodedValues`** and **before calling `GroupByDepScope`**, so that you block early:
+
+```go
+// Extract aud and role from token
+aud, audOk := jwtDecodedValues["aud"]
+scopedRoles, roleOk := jwtDecodedValues["ScopedRoles"]
+
+if audOk && roleOk {
+    tokenMap := map[string]string{
+        "aud":  aud.GetStringValue(),
+        "role": scopedRoles.GetStringValue(),
+    }
+
+    if err := token.ValidateAudienceRoleMapping(tokenMap); err != nil {
+        customErr := errors.New(
+            errors.RoleNotPermittedForAudience,
+            fmt.Sprintf("audience-role mismatch: %v", err),
+            errors.RoleNotPermittedForAudienceSolution,
+        )
+        logger.Error().Msgf("audience-role validation failed: %v", customErr)
+        return errorResponseGenerator("authorization denied", http.StatusForbidden, customErr), nil
+    }
+}
+```
 
 ---
 
-Would you like me to give you a test YAML and a mock unit test to validate this flow too?
+## 🚀 Final Outcome
+
+* ✅ You validate audience-role mapping *once*, efficiently.
+* ✅ Logic stays cleanly in `token.go`, which is its rightful place.
+* ✅ `extauth.go` simply *uses* that validator.
+* ✅ Config remains hidden from main, as you required.
+
+---
+
+Would you like me to:
+
+* Refactor the exact block in `extauth.go` for you?
+* Add unit tests for the `ValidateAudienceRoleMapping()`?
+* Help log the failing `aud` and `role` clearly for traceability?
+
+Let me know what you'd like next.
