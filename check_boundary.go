@@ -1,21 +1,20 @@
-
-## ✅ Refactoring Audience-Based Authorization
+✅ Refactoring Path-Based Authorization in Atlas2
 
 ### 🧠 Background
 
-Atlas2 **authentication and authorization is performed via JWT**, managed at the Envoy layer using filters and external auth integrations. Each service boundary (e.g., WWB, NB, CN) previously had its own audience defined within Envoy, and requests were routed through **separate authorizers** depending on the path.
+Atlas2 **authentication and authorization is performed via JWT**, managed at the Envoy layer using filters and external auth integrations. Previously, each service boundary (e.g., WWB, NB, CN) had its own match rule based on the **API path prefix**, and requests were routed through different **authorizers** accordingly.
 
 This setup resulted in:
 
-* A **tight coupling between URL path and authorization logic**.
-* A **complex and repetitive Envoy configuration**, with each boundary needing its own `provider_name`, `audience`, and match block.
-* Challenges with **optional feature boundaries**, where requests across APIs do not necessarily follow a rigid path structure.
+* A **tight coupling between API path and authorization logic**.
+* A **complex and repetitive Envoy configuration**, with each boundary needing its own `provider_name`, path match, and validation logic.
+* Difficulty supporting **optional feature boundaries**, where APIs do not follow strict URL segregation.
 
 ---
 
 ### 📌 Objective
 
-To **decouple audience validation from the Envoy layer** and shift it into the centralized `authz` webhook. This makes the system more flexible, maintainable, and aligned with future needs like dynamic routing and optional resource boundaries.
+To **decouple path-based authorization logic from the Envoy layer** and move it into the centralized `authz` webhook. This enables more flexible request handling and simplifies the overall configuration.
 
 ---
 
@@ -23,7 +22,7 @@ To **decouple audience validation from the Envoy layer** and shift it into the c
 
 #### 🔴 Removed:
 
-* All **factory-specific authorizers** that enforced boundary-based audiences at the Envoy level.
+* All **factory-specific authorizers** that enforced service-boundary logic based on API paths at the Envoy level.
 
   ```yaml
   {{- range $key, $val := .Values.envoy.factories }}
@@ -34,11 +33,11 @@ To **decouple audience validation from the Envoy layer** and shift it into the c
   {{- end }}
   ```
 
-* Associated Envoy config for individual audiences and remote JWKS.
+* Associated `provider_name` definitions and OIDC configuration for each factory.
 
 #### ✅ Retained:
 
-* A **single default authorizer** for all API requests:
+* A **single default authorizer** applied to all requests:
 
   ```yaml
   - match:
@@ -49,16 +48,16 @@ To **decouple audience validation from the Envoy layer** and shift it into the c
 
 ---
 
-### 🚚 Where Did the Audience Validation Go?
+### 🚚 Where Did the Authorization Logic Go?
 
-The audience validation logic was **shifted to the Authorization Webhook (`authz`)**.
-This allows validation to be performed in **application logic** instead of relying on hardcoded path-based rules in Envoy.
+The **path-specific authorization logic** was shifted into the **Authorization Webhook (`authz`)**.
+This allows all requests to be processed centrally, and the webhook can now enforce the correct boundary rules based on request metadata instead of URL path.
 
 ---
 
 ### 🎯 Benefits of This Refactor
 
-* ✅ **Cleaner Envoy configuration** — reduces duplication and simplifies maintenance.
-* ✅ **Flexible routing support** — removes tight coupling between API paths and audiences.
-* ✅ **Centralized logic** — easier to evolve, test, and extend from one place.
-* ✅ **Future readiness** — paves the way for optional and dynamic boundary support.
+* ✅ **Cleaner Envoy config** — reduces complexity and duplication.
+* ✅ **Centralized logic** — authorization decisions are made in one place, simplifying updates and audits.
+* ✅ **Increased flexibility** — removes dependency on strict URL path structures.
+* ✅ **Supports future extensibility** — enables dynamic routing and optional feature boundaries.
