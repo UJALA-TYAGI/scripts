@@ -1,206 +1,64 @@
 
-## ✅ Quick Summary of Your Goal
+## ✅ Refactoring Audience-Based Authorization
 
-In `extauth.go`, during request processing, **you want to reject requests where:**
+### 🧠 Background
 
-* `aud` and `scopedRoles` in the JWT token do not align with the allowed audience-role mapping.
+Atlas2 **authentication and authorization is performed via JWT**, managed at the Envoy layer using filters and external auth integrations. Each service boundary (e.g., WWB, NB, CN) previously had its own audience defined within Envoy, and requests were routed through **separate authorizers** depending on the path.
 
-You already have:
+This setup resulted in:
 
-* Token parsing and extraction logic in `token.go`
-* `decodeToken()` that gives you structured token fields like `aud`, `role`, etc.
-* You want the validation **only once**, and efficiently.
-
----
-
-## 🎯 Recommendation: **Call `ValidateAudienceRoleMapping()` from `token.go` inside `extauth.go`**
-
-### Why?
-
-| Criteria                          | Validate inside `token.go` | Validate inline in `extauth.go` |
-| --------------------------------- | -------------------------- | ------------------------------- |
-| Centralized logic (DRY)           | ✅ Yes                      | ❌ Duplicates logic              |
-| Reuse in other services           | ✅ Yes                      | ❌ No                            |
-| Ease of testing and unit coverage | ✅ Yes (clean func)         | ❌ Mixed with request logic      |
-| Separation of concerns            | ✅ Token validation only    | ❌ Breaks modular boundaries     |
-| Simplicity in `extauth.go`        | ✅ Yes                      | ❌ More cluttered code           |
-| Config loaded once (singleton)    | ✅ Already handled          | ❌ Would need re-setup           |
+* A **tight coupling between URL path and authorization logic**.
+* A **complex and repetitive Envoy configuration**, with each boundary needing its own `provider_name`, `audience`, and match block.
+* Challenges with **optional feature boundaries**, where requests across APIs do not necessarily follow a rigid path structure.
 
 ---
 
-## ✅ What You Should Do
+### 📌 Objective
 
-### Step 1: In `token.go`, export the validator
-
-Make sure `ValidateAudienceRoleMapping` is **exported**:
-
-```go
-func ValidateAudienceRoleMapping(token map[string]string) error { ... }
-```
+To **decouple audience validation from the Envoy layer** and shift it into the centralized `authz` webhook. This makes the system more flexible, maintainable, and aligned with future needs like dynamic routing and optional resource boundaries.
 
 ---
 
-### Step 2: In `extauth.go`, extract `aud` and `scopedRoles` from `jwtDecodedValues`
+### ✂️ What Was Changed
 
-```go
-aud, audOk := jwtDecodedValues["aud"]
-scopedRoles, roleOk := jwtDecodedValues["ScopedRoles"]
-```
+#### 🔴 Removed:
 
-> Assuming `jwtDecodedValues` is a map of JWT fields.
+* All **factory-specific authorizers** that enforced boundary-based audiences at the Envoy level.
 
----
+  ```yaml
+  {{- range $key, $val := .Values.envoy.factories }}
+  - match:
+      prefix: {{ $val.api_group }}
+    requires:
+      provider_name: {{ $val.provider_name }}-authorizer
+  {{- end }}
+  ```
 
-### Step 3: Convert to `map[string]string` and call the validator
+* Associated Envoy config for individual audiences and remote JWKS.
 
-```go
-if audOk && roleOk {
-    tokenMap := map[string]string{
-        "aud":  aud.GetStringValue(),
-        "role": scopedRoles.GetStringValue(),
-    }
+#### ✅ Retained:
 
-    if err := token.ValidateAudienceRoleMapping(tokenMap); err != nil {
-        customErr := errors.New(
-            errors.RoleNotPermittedForAudience,
-            fmt.Sprintf("audience-role mismatch: %v", err),
-            errors.RoleNotPermittedForAudienceSolution,
-        )
-        logger.Error().Msgf("audience-role validation failed: %v", customErr)
-        return errorResponseGenerator("authorization denied", http.StatusForbidden, customErr), nil
-    }
-}
-```
+* A **single default authorizer** for all API requests:
+
+  ```yaml
+  - match:
+      prefix: /
+    requires:
+      provider_name: default-authorizer
+  ```
 
 ---
 
-### 🔄 Where to Place This in `extauth.go`:
+### 🚚 Where Did the Audience Validation Go?
 
-Just **after extracting `jwtDecodedValues`** and **before calling `GroupByDepScope`**, so that you block early:
-
-```go
-// Extract aud and role from token
-aud, audOk := jwtDecodedValues["aud"]
-scopedRoles, roleOk := jwtDecodedValues["ScopedRoles"]
-
-if audOk && roleOk {
-    tokenMap := map[string]string{
-        "aud":  aud.GetStringValue(),
-        "role": scopedRoles.GetStringValue(),
-    }
-
-    if err := token.ValidateAudienceRoleMapping(tokenMap); err != nil {
-        customErr := errors.New(
-            errors.RoleNotPermittedForAudience,
-            fmt.Sprintf("audience-role mismatch: %v", err),
-            errors.RoleNotPermittedForAudienceSolution,
-        )
-        logger.Error().Msgf("audience-role validation failed: %v", customErr)
-        return errorResponseGenerator("authorization denied", http.StatusForbidden, customErr), nil
-    }
-}
-```
+The audience validation logic was **shifted to the Authorization Webhook (`authz`)**.
+This allows validation to be performed in **application logic** instead of relying on hardcoded path-based rules in Envoy.
 
 ---
 
-package token_test
+### 🎯 Benefits of This Refactor
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/suite"
-	"your_project/pkg/token"
-	"your_project/pkg/mapper"
-	"your_project/internal/pkg/utils/errors"
-)
-
-type TokenTestSuite struct {
-	suite.Suite
-}
-
-func TestTokenSuite(t *testing.T) {
-	suite.Run(t, new(TokenTestSuite))
-}
-
-func (s *TokenTestSuite) SetupTest() {
-	mockMapping := map[string][]string{
-		"JPMC:URI:RS-000001-000001-TestEnv1-PROD": {
-			"PORTFOLIO_BOUNDARY_RESOURCE_MANAGER",
-			"PORTFOLIO_BOUNDARY_RESOURCE_READER",
-		},
-		"JPMC:URI:R5-000002-000002-TestEnv2-PROD": {
-			"NETWORK_BOUNDARY_RESOURCE_MANAGER",
-			"NETWORK_BOUNDARY_RESOURCE_READER",
-		},
-		"JPMC:URI:R5-000003-000003-TestEnv3-PROD": {
-			"RETAIL_WORKLOAD_BOUNDARY_RESOURCE_MANAGER",
-			"RETAIL_WORKLOAD_BOUNDARY_RESOURCE_READER",
-		},
-		"JPMC:URI:R5-000004-000004-TestEnv4-PROD": {
-			"WHOLESALE_BOUNDARY_RESOURCE_MANAGER",
-			"WHOLESALE_BOUNDARY_RESOURCE_READER",
-		},
-	}
-	mapper.SetTestMapping(mockMapping)
-}
-
-func (s *TokenTestSuite) TestValidateAudienceRoleMapping() {
-	tests := []struct {
-		name    string
-		aud     string
-		roles   []string
-		wantErr bool
-		errMsg  string
-	}{
-		{
-			name:    "Valid role for TestEnv1",
-			aud:     "JPMC:URI:RS-000001-000001-TestEnv1-PROD",
-			roles:   []string{"PORTFOLIO_BOUNDARY_RESOURCE_MANAGER"},
-			wantErr: false,
-		},
-		{
-			name:    "Valid role among multiple roles for TestEnv2",
-			aud:     "JPMC:URI:R5-000002-000002-TestEnv2-PROD",
-			roles:   []string{"SOME_OTHER_ROLE", "NETWORK_BOUNDARY_RESOURCE_READER"},
-			wantErr: false,
-		},
-		{
-			name:    "Unknown audience",
-			aud:     "JPMC:URI:UNKNOWN-AUDIENCE-PROD",
-			roles:   []string{"PORTFOLIO_BOUNDARY_RESOURCE_MANAGER"},
-			wantErr: true,
-			errMsg:  "not found in config",
-		},
-		{
-			name:    "No permitted role for valid audience",
-			aud:     "JPMC:URI:R5-000002-000002-TestEnv2-PROD",
-			roles:   []string{"UNAUTHORIZED_ROLE"},
-			wantErr: true,
-			errMsg:  "not allowed",
-		},
-		{
-			name:    "Valid audience but empty roles list",
-			aud:     "JPMC:URI:RS-000001-000001-TestEnv1-PROD",
-			roles:   []string{},
-			wantErr: true,
-			errMsg:  "not allowed",
-		},
-	}
-
-	for _, tt := range tests {
-		s.Run(tt.name, func() {
-			err := token.ValidateAudienceRoleMapping(tt.aud, tt.roles)
-			if tt.wantErr {
-				s.Error(err)
-				if tt.errMsg != "" {
-					s.Contains(err.Error(), tt.errMsg)
-				}
-			} else {
-				s.NoError(err)
-			}
-		})
-	}
-}
-
-
-
+* ✅ **Cleaner Envoy configuration** — reduces duplication and simplifies maintenance.
+* ✅ **Flexible routing support** — removes tight coupling between API paths and audiences.
+* ✅ **Centralized logic** — easier to evolve, test, and extend from one place.
+* ✅ **Future readiness** — paves the way for optional and dynamic boundary support.
