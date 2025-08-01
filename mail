@@ -117,5 +117,4 @@ Embrace new technologies and achieve relevant certifications to enhance our clou
 
 ---
 
-Let me know when you're ready — I can stitch this together with Goal 1 and continue to the next section.
-
+Updated the scanning approach by splitting dependency and deployment image scans into different pipelines to manage risk better.
