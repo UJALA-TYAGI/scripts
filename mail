@@ -63,3 +63,59 @@ These efforts reflect my commitment to building a workplace that values inclusio
 ---
 
 Let me know when you're ready to move on to the next goal.
+
+
+Here's a **refined mid-year Check-In summary** for your **second goal** — *"Deliver High-Quality Projects and Enhance Technical Skills"* — based entirely on your BAU work and recent achievements. This is structured into clean bullet points aligned to your **objectives**, suitable for the Check-In format.
+
+---
+
+## **Goal 2: Deliver High-Quality Projects and Enhance Technical Skills**
+
+### **Objective 1**
+
+Deliver on project commitments for AuthNZ and Naming, ensuring timely and high-quality outcomes aligned with CFS objectives.
+
+**Action Steps:**
+
+* Develop and adhere to a detailed project timeline.
+* Implement quality assurance practices.
+* Proactively address and mitigate potential challenges.
+
+**Mid-Year Check-In Highlights:**
+
+* Successfully **reengineered the request routing in AuthNZ**, eliminating `kube-proxy` to reduce latency, improve security, and align with platform scalability goals.
+* **Designed and implemented a full-scale observability pipeline** using Prometheus, Datadog, and scoped Envoy admin ports, boosting traceability and reducing MTTD.
+* Authored **robust alerting and dashboarding solutions**, improving operational awareness and minimizing alert fatigue for the team.
+* Conducted a **resilience-focused performance PoC** to proactively resolve API failures under high load, increasing platform robustness.
+* Applied **test-driven development (TDD)** with strong modular test coverage using `Mockery`, improving code reliability and reducing regression risks.
+* Spearheaded the **segmentation of ingress traffic paths and strategic rate-limiting**, boosting throughput and reducing intermittent production failures.
+* Delivered **comprehensive performance testing and capacity analysis** using Blazemeter and JMeter, providing quantified insights into system behavior under load.
+* Led **release management for AuthNZ**, validating E2E functionality across environments and minimizing deployment risks.
+* Improved code hygiene by resolving **500+ linting violations**, aligning with Go best practices and strengthening long-term maintainability.
+* Played a key role in **threat modeling alignment**, implementing detective/preventive controls and collaborating with CTC for secure releases.
+
+---
+
+### **Objective 2**
+
+Embrace new technologies and achieve relevant certifications to enhance our cloud capabilities.
+
+**Action Steps:**
+
+* Learn and explore new technologies.
+* Achieve CKAD and AWS Solution Architect certification.
+* Attend workshops and stay updated with industry trends.
+
+**Mid-Year Check-In Highlights:**
+
+* **Achieved CKAD certification**, demonstrating applied proficiency in Kubernetes architecture, networking, and security practices.
+* Actively **working toward AWS Solution Architect Associate (SAA)** certification to deepen cloud infrastructure understanding and contribute to scalable architecture decisions.
+* Implemented multiple **Kubernetes-native health probes**, admin port hardening, and optimized Prometheus/Datadog flows — showing strong alignment with cloud-native principles.
+* Initiated and documented a **client wrapper library** for container image scanning, enabling cross-team adoption and reusability across deployment pipelines.
+* Contributed to **continuous image vulnerability management** by refactoring legacy scripts for modularity, clean Go practices, and better CI/CD integration.
+* Implemented **CI/CD enhancements** including post-release E2E test automation and cleanup of stale monitoring resources, improving pipeline hygiene and system reliability.
+
+---
+
+Let me know when you're ready — I can stitch this together with Goal 1 and continue to the next section.
+
