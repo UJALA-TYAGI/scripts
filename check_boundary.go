@@ -1,26 +1,41 @@
+func (tokenSuite *TokenTestSuite) TestValidateRolesForAudience() {
+    // Setup: inject some audience-role mappings
+    environ.EnvInstance.AudienceRoles = map[string][]string{
+        "aud1": {"ROLE_A", "ROLE_B"},
+        "aud2": {"ROLE_X"},
+    }
 
-### 🛤️ Options Considered
+    tokenSuite.Run("Valid audience and allowed roles", func() {
+        err := token.ValidateRolesForAudience("aud1", []string{"ROLE_A"})
+        tokenSuite.NoError(err)
+    })
 
-During this refactor, we evaluated two primary approaches for decoupling authorization from strict path-based matching:
+    tokenSuite.Run("Invalid audience", func() {
+        err := token.ValidateRolesForAudience("unknown_aud", []string{"ROLE_A"})
+        var customErr *customError.InternalError
+        tokenSuite.Error(err)
+        tokenSuite.True(errors.As(err, &customErr))
+        tokenSuite.Equal(customError.InvalidAudience, customErr.Code)
+    })
 
-#### Option 1: **Move Validation to Authz Webhook** ✅ *(Chosen Approach)*
+    tokenSuite.Run("Valid audience but disallowed role", func() {
+        err := token.ValidateRolesForAudience("aud1", []string{"ROLE_X"})
+        var customErr *customError.InternalError
+        tokenSuite.Error(err)
+        tokenSuite.True(errors.As(err, &customErr))
+        tokenSuite.Equal(customError.RoleAudienceMismatch, customErr.Code)
+    })
 
-* Perform audience validation in the centralized `authz` webhook instead of Envoy.
-* The webhook checks token claims and request metadata to determine access.
-* Results in a **cleaner Envoy configuration** and **centralized access logic**.
-* Slightly increases request hops (Envoy → webhook), but offers flexibility and maintainability.
-* Scales better across CRDs and supports more dynamic routing needs.
+    tokenSuite.Run("Multiple roles, some invalid", func() {
+        err := token.ValidateRolesForAudience("aud1", []string{"ROLE_A", "ROLE_X"})
+        var customErr *customError.InternalError
+        tokenSuite.Error(err)
+        tokenSuite.True(errors.As(err, &customErr))
+        tokenSuite.Equal(customError.RoleAudienceMismatch, customErr.Code)
+    })
 
-#### Option 2: **Enumerate Full URL Paths in CRDs for Envoy Match**
-
-* Maintain validation within Envoy by mapping **specific URL paths to audience values** at the CRD level (rather than grouping by API prefix).
-* Would require onboarding **each CRD individually** and updating Envoy rules accordingly.
-* Reduces reliance on the webhook, potentially minimizing incorrect audience-resource mismatches.
-* But significantly increases **templating complexity** and is harder to manage and evolve.
-
----
-
-### 📌 Final Decision
-
-We are proceeding with **Option 1: validation logic in the centralized `authz` webhook**.
-This ensures **scalability, reduced configuration burden, and centralized governance**.
+    tokenSuite.Run("Multiple roles, all valid", func() {
+        err := token.ValidateRolesForAudience("aud1", []string{"ROLE_A", "ROLE_B"})
+        tokenSuite.NoError(err)
+    })
+}
