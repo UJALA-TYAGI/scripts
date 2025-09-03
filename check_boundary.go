@@ -39,3 +39,15 @@ func (tokenSuite *TokenTestSuite) TestValidateRolesForAudience() {
         tokenSuite.NoError(err)
     })
 }
+
+
+
+func (suite *TokenTestSuite) SetupTest() {
+    environ.EnvInstance = &environ.Environment{
+        AudienceRoles: map[string][]string{
+            "aud1": {"role1", "role2"},
+            "aud2": {"roleA"},
+        },
+    }
+}
+
