@@ -9,3 +9,9 @@ data:
 
 helm template . | yq '.data."audience_role_mapping-yaml"'
 
+
+data:
+  audience_role_mapping.yaml: |
+    {{ .Values.audience_roles | toYaml | nindent 4 }}
+
+
