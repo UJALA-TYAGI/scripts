@@ -5,3 +5,7 @@ metadata:
 data:
   audience_role_mapping-yaml: |
 {{- toYaml (dict "audience_roles" .Values.audienceRoleMapping) | nindent 4 }}
+
+
+helm template . | yq '.data."audience_role_mapping-yaml"'
+
