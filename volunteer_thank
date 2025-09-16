@@ -1,22 +1,7 @@
-Subject: Thank You for Powering LEAP 2025
-
-Dear [Name],
-
-As we conclude LEAP 2025 Cohort 2 at the Bengaluru Tech Centre, I want to take a moment to thank you for the invaluable role you played in shaping and delivering this program.
-
-From brainstorming the right sessions and identifying impactful speakers, to supporting logistics, mentoring project teams, and ensuring smooth execution across all five days, 
-your contributions went far beyond tasks, they directly shaped the participant experience. 
-Because of your commitment, the participants were able to fully immerse themselves in the program, learn without distraction, and 
-take away lessons that will continue to influence their careers and teams.
-
-What makes your involvement even more meaningful is that, as a LEAP alumnus, you’ve chosen to give back to the very community that once shaped your own journey.
-By paying it forward, you not only helped this cohort grow—you strengthened the cycle of leadership, collaboration, and continuous learning that defines LEAP.
-
-The success of LEAP rests on the passion and ownership of volunteers like you. You didn’t just support the program, you elevated it, 
-creating an environment where participants could learn, collaborate, and grow with confidence.
-
-
-On behalf of the Professional Development workstream, I’d also like to extend our thanks to your manager for supporting your involvement. 
-Contributions like yours not only strengthen LEAP but also help us build a culture of continuous learning and leadership across the Tech Centre.
-
-Warm regards,
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audience-role-mapping
+data:
+  audience_role_mapping-yaml: |
+{{- toYaml (dict "audience_roles" .Values.audienceRoleMapping) | nindent 4 }}
